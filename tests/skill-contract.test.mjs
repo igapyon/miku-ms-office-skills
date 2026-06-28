@@ -35,7 +35,9 @@ test("runtime policy documents backend selection and failure behavior", () => {
     "## Handoff Shape",
     "`*-only` user requests must not silently fall back",
     "If the requested `*-only` backend is missing",
-    "Do not invent runtime artifact names"
+    "Do not invent runtime artifact names",
+    "Node.js CLI artifacts",
+    "Do not use `*-runtime-*.mjs` files as CLI commands"
   ]) {
     assert.ok(runtimePolicy.includes(expected), `missing runtime policy: ${expected}`);
   }

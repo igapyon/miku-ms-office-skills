@@ -5,7 +5,7 @@ converter family.
 
 Compatibility source status:
 
-- Checked on: 2026-06-28
+- Checked on: 2026-06-29
 - Source: GitHub Releases API, plus repository `devel` commit for repositories
   without a latest release
 - State: runtime artifacts are bundled for the listed release candidates
@@ -14,12 +14,12 @@ Compatibility source status:
 
 | Tool | Bundled anchor | Bundled runtime artifacts | Status |
 | --- | --- | --- | --- |
-| `miku-xlsx2md` | release `v1.2.0`, published 2026-06-27 | `miku-xlsx2md-runtime-1.2.0.mjs`, `miku-xlsx2md-runtime-1.2.0.json` | bundled |
-| `miku-docx2md` | release `v1.1.0`, published 2026-06-24 | `miku-docx2md-runtime-1.1.0.mjs`, `miku-docx2md-1.1.0.mjs` | bundled |
-| `miku-pptx2md` | release `v0.4.1`, published 2026-06-28 | `miku-pptx2md-runtime-0.4.1.mjs` | bundled |
-| `miku-md2xlsx` | release `v0.6.5`, published 2026-06-27 | `miku-md2xlsx-0.6.5.mjs` | bundled |
-| `miku-md2docx` | release `v0.9.1.1`, published 2026-06-25 | `miku-md2docx-0.9.1.1.mjs` | bundled |
-| `miku-md2pptx` | release `v0.2.1`, published 2026-06-27 | `miku-md2pptx-0.2.1.mjs` | bundled |
+| `miku-xlsx2md` | release `v1.2.2`, published 2026-06-28 | `miku-xlsx2md-1.2.2.mjs` | bundled |
+| `miku-docx2md` | release `v1.1.0`, published 2026-06-24 | `miku-docx2md-1.1.0.mjs` | bundled |
+| `miku-pptx2md` | release `v0.4.3`, published 2026-06-28 | `miku-pptx2md-0.4.3.mjs` | bundled |
+| `miku-md2xlsx` | release `v0.6.6`, published 2026-06-28 | `miku-md2xlsx-0.6.6.mjs` | bundled |
+| `miku-md2docx` | release `v0.9.2`, published 2026-06-28 | `miku-md2docx-0.9.2.mjs` | bundled |
+| `miku-md2pptx` | release `v0.2.2`, published 2026-06-28 | `miku-md2pptx-0.2.2.mjs` | bundled |
 | `miku-xlsx2md-java` | release `v1.2.0`, published 2026-06-27 | `miku-xlsx2md-1.2.0.jar` | bundled |
 | `miku-docx2md-java` | release `v1.0.0.1`, published 2026-05-14 | `miku-docx2md-1.0.0.1.jar` | bundled |
 | `miku-pptx2md-java` | release `v0.4.1`, published 2026-06-27 | `miku-pptx2md-0.4.1.jar` | bundled |
@@ -50,5 +50,5 @@ Compatibility source status:
 - Keep this skill focused on routing, runtime discovery, handoff, diagnostics,
   and packaging.
 - Update this file when a new Office/Markdown converter joins the family.
-- Source artifacts are not bundled. Only runtime execution artifacts and the
-  `miku-xlsx2md` runtime metadata JSON are bundled.
+- Source artifacts are not bundled. Only CLI execution artifacts are bundled
+  for the selected converter releases.

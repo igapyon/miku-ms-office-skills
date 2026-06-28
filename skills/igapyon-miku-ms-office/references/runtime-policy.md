@@ -7,19 +7,20 @@ Office-to-Markdown execution is text-focused. Treat images, shapes, charts, and
 other visual content as unsupported or extremely limited unless the selected
 upstream runtime explicitly documents support for that content type.
 
-Bundled runtime anchors are recorded in [upstreams.md](upstreams.md). Treat a
-runtime as executable only when the corresponding `.mjs` or `.jar` file is
-actually present under `runtime/`.
+Bundled runtime anchors are recorded in [upstreams.md](upstreams.md). Treat an
+artifact as CLI-executable only when it is listed as a CLI artifact below and
+is actually present under `runtime/`. Do not use `*-runtime-*.mjs` files as CLI
+commands.
 
 ## Runtime Lookup
 
 Check `runtime/` before attempting CLI execution.
 
-Bundled artifact patterns:
+Bundled CLI artifact patterns:
 
-- `miku-xlsx2md-runtime-<version>.mjs`
-- `miku-docx2md-runtime-<version>.mjs`
-- `miku-pptx2md-runtime-<version>.mjs`
+- `miku-xlsx2md-<version>.mjs`
+- `miku-docx2md-<version>.mjs`
+- `miku-pptx2md-<version>.mjs`
 - `miku-md2xlsx-<version>.mjs`
 - `miku-md2docx-<version>.mjs`
 - `miku-md2pptx-<version>.mjs`
@@ -35,17 +36,16 @@ report the missing artifact and stay in handoff-only mode.
 
 ## Bundled Runtime Set
 
-Node.js runtimes:
+Node.js CLI artifacts:
 
-- `miku-xlsx2md-runtime-1.2.0.mjs`
-- `miku-docx2md-runtime-1.1.0.mjs`
+- `miku-xlsx2md-1.2.2.mjs`
 - `miku-docx2md-1.1.0.mjs`
-- `miku-pptx2md-runtime-0.4.1.mjs`
-- `miku-md2xlsx-0.6.5.mjs`
-- `miku-md2docx-0.9.1.1.mjs`
-- `miku-md2pptx-0.2.1.mjs`
+- `miku-pptx2md-0.4.3.mjs`
+- `miku-md2xlsx-0.6.6.mjs`
+- `miku-md2docx-0.9.2.mjs`
+- `miku-md2pptx-0.2.2.mjs`
 
-Java runtimes:
+Java CLI artifacts:
 
 - `miku-xlsx2md-1.2.0.jar`
 - `miku-docx2md-1.0.0.1.jar`
@@ -54,10 +54,6 @@ Java runtimes:
 - `miku-md2docx-java-0.9.1.jar`
 - `miku-md2pptx-java-0.2.2.jar`
 
-Runtime metadata:
-
-- `miku-xlsx2md-runtime-1.2.0.json`
-
 ## Backend Selection
 
 - Use `tool-map.md` to select the converter direction before selecting a
@@ -65,13 +61,11 @@ Runtime metadata:
 - If the user asks for Java, jar, Maven, or a Java-only environment, use the
   Java runtime for the selected converter.
 - If the user asks for Node.js, JavaScript, browser-compatible runtime behavior,
-  or `.mjs`, use the Node.js runtime for the selected converter.
-- If the user does not specify a backend, prefer Node.js for converter families
-  whose Node.js runtime is bundled, because the current skill helper surface is
-  JavaScript-oriented.
-- For `miku-docx2md`, prefer `miku-docx2md-runtime-1.1.0.mjs` for the bundled
-  runtime path. Keep `miku-docx2md-1.1.0.mjs` available as the upstream CLI
-  artifact.
+  or `.mjs`, use a Node.js CLI artifact when one is bundled for the selected
+  converter. Do not use `*-runtime-*.mjs` files as CLI commands.
+- If the user does not specify a backend, prefer the bundled Node.js CLI
+  artifact for the selected converter. Use Java only when the user requests it
+  or when a Node.js CLI artifact is unavailable.
 
 ## Execution Rules
 
