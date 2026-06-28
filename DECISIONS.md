@@ -37,6 +37,30 @@ The initial skeleton created only `skills/igapyon-miku-ms-office/runtime/` with
 The current skill must remain handoff-only for execution until upstream release
 versions are pinned and runtime artifacts are added.
 
+## 2026-06-28: Candidate pins require human confirmation
+
+理由:
+Latest upstream release and artifact candidates were discovered from GitHub,
+but `GOAL.md` says to stop before choosing exact upstream release versions or
+binary runtime artifacts without user confirmation.
+
+影響:
+`upstreams.md` records candidate pins, not final bundled runtime decisions.
+Runtime artifact download and bundling must wait until the user confirms the
+candidate versions or gives another version policy.
+
+## 2026-06-28: Bundle runtime artifacts only, not source artifacts
+
+理由:
+GitHub Releases include both runtime artifacts and source artifacts. The Agent
+Skill needs local execution runtimes, while source artifacts are not required
+for normal skill operation.
+
+影響:
+`runtime/` includes Node.js `.mjs`, Java `.jar`, and the
+`miku-xlsx2md` runtime metadata JSON. It does not include `*-sources-*`
+artifacts.
+
 ## Harness Operations Decisions
 
 Use this section for reusable decisions about build/test/package/comparison/roundtrip harness execution. Do not paste full failure logs here.
@@ -47,3 +71,24 @@ Use this section for reusable decisions about build/test/package/comparison/roun
 - Decision: Use `npm test` first for fast validation, then `npm run build` to regenerate and verify the release zip.
 - Reason: This keeps installable bundle shape and zip contents aligned with current skill files.
 - Next time: Run `npm test`, then `npm run build` after changing skill files, tests, or bundle scripts.
+
+### 2026-06-28: Run skill validation through python3
+
+- Context: Executing `quick_validate.py` directly failed because the script did not have executable permission in this environment.
+- Decision: Run the validator through `python3` instead of invoking the script path directly.
+- Reason: The Python entrypoint validates the same skill folder without depending on the executable bit.
+- Next time: Use `python3 /Users/igapyon/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/igapyon-miku-ms-office`.
+
+### 2026-06-28: Read GitHub release JSON from saved files
+
+- Context: Direct `curl | jq` and a multi-repository shell loop produced empty or partial release extraction results while individual `curl -o` requests and later `jq` reads succeeded.
+- Decision: For upstream release pinning checks, save each GitHub release JSON response to a temporary file first, then run `jq` against the saved file.
+- Reason: This separates network retrieval from JSON extraction and avoids losing evidence when a pipeline or loop behaves unexpectedly.
+- Next time: Use `curl -s <release-api-url> -o /tmp/<repo>-release.json`, then extract tag, published date, and asset names with `jq`.
+
+### 2026-06-28: Scope .gitkeep bundle assertions to runtime
+
+- Context: After runtime artifacts were bundled, `npm test` failed because the release bundle test rejected every `.gitkeep`, including intentional placeholders under `assets/` and `lib/`.
+- Decision: Assert only that `runtime/.gitkeep` is absent when runtime artifacts are bundled.
+- Reason: Placeholder files outside `runtime/` are part of the current starter bundle shape, while `runtime/.gitkeep` should disappear once real runtime artifacts exist.
+- Next time: Keep bundle exclusion assertions scoped to the directory whose lifecycle changed.

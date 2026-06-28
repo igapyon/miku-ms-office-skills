@@ -27,5 +27,16 @@ Adopted decisions:
 
 ## Upstream Anchors
 
-The initial upstream compatibility anchor is each repository's `devel` branch.
-Precise release tags and runtime artifact versions still need to be pinned.
+Runtime artifacts are now bundled from the release anchors recorded in
+`skills/igapyon-miku-ms-office/references/upstreams.md`.
+
+Source artifacts are intentionally not bundled. The skill packages only runtime
+execution artifacts and the `miku-xlsx2md` runtime metadata JSON.
+
+## Verification
+
+Checked on 2026-06-28:
+
+- `npm test`: passed
+- `npm run build`: passed
+- `python3 /Users/igapyon/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/igapyon-miku-ms-office`: passed
