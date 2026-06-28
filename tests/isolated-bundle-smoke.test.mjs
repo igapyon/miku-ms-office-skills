@@ -32,7 +32,9 @@ test("generated bundle works from an isolated install shape", () => {
   });
 
   const sourceBundle = path.resolve(ROOT, "bundle", repoName);
-  const isolatedRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${repoName}-bundle-`));
+  const isolatedParent = fs.mkdtempSync(path.join(os.tmpdir(), `${repoName}-bundle-`));
+  const isolatedRoot = path.resolve(isolatedParent, "skill-home");
+  fs.mkdirSync(isolatedRoot, { recursive: true });
   fs.cpSync(sourceBundle, isolatedRoot, { recursive: true });
 
   const installedSkillRoot = path.resolve(isolatedRoot, "skills", skillName);
