@@ -1,0 +1,38 @@
+{
+  "title": "igapyon-miku-ms-office",
+  "description": "Agent Skill for routing miku-soft Microsoft Office and Markdown conversion workflows.",
+  "generatedBy": "manual-initial-skeleton",
+  "generatedAt": "2026-06-28",
+  "files": [
+    {
+      "path": "SKILL.md",
+      "type": "file",
+      "purpose": "Primary skill activation and workflow instructions."
+    },
+    {
+      "path": "references/INDEX.md",
+      "type": "file",
+      "purpose": "Reference file overview."
+    },
+    {
+      "path": "references/tool-map.md",
+      "type": "file",
+      "purpose": "Conversion direction to upstream tool mapping."
+    },
+    {
+      "path": "references/runtime-policy.md",
+      "type": "file",
+      "purpose": "Runtime lookup, execution, and handoff policy."
+    },
+    {
+      "path": "references/upstreams.md",
+      "type": "file",
+      "purpose": "Upstream repository anchors."
+    },
+    {
+      "path": "agents/openai.yaml",
+      "type": "file",
+      "purpose": "Optional OpenAI agent metadata."
+    }
+  ]
+}
