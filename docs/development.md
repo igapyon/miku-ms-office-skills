@@ -2,6 +2,13 @@
 
 Checked on 2026-06-28.
 
+## Current State
+
+- Package version: `0.4.0`
+- Runtime maturity: bundled-runtime execution for documented artifacts, with
+  handoff behavior for unsupported or missing runtime paths.
+- Release zip: `bundle/igapyon-miku-ms-office-skills-0.4.0.zip`
+
 ## Initial Shape
 
 - Repository: `miku-ms-office-skills`

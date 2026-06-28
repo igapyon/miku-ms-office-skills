@@ -27,17 +27,17 @@ family.
 `runtime-policy.md`, and `upstreams.md`. Conversion behavior remains owned by
 the upstream miku converter repositories.
 
-## 2026-06-28: Runtime artifacts are not bundled yet
+## 2026-06-28: Initial runtime state was handoff-only
 
 理由:
 The initial skeleton created only `skills/igapyon-miku-ms-office/runtime/` with
 `.gitkeep`. No `.mjs` or `.jar` runtime artifacts have been placed yet.
 
 影響:
-The current skill must remain handoff-only for execution until upstream release
-versions are pinned and runtime artifacts are added.
+Superseded later on 2026-06-28 after runtime artifacts were pinned and bundled.
+Do not treat this as the current execution state.
 
-## 2026-06-28: Candidate pins require human confirmation
+## 2026-06-28: Candidate pins required human confirmation
 
 理由:
 Latest upstream release and artifact candidates were discovered from GitHub,
@@ -45,9 +45,8 @@ but `GOAL.md` says to stop before choosing exact upstream release versions or
 binary runtime artifacts without user confirmation.
 
 影響:
-`upstreams.md` records candidate pins, not final bundled runtime decisions.
-Runtime artifact download and bundling must wait until the user confirms the
-candidate versions or gives another version policy.
+Superseded later on 2026-06-28 after the selected artifacts were bundled.
+`upstreams.md` now records the bundled anchors and artifact names.
 
 ## 2026-06-28: Bundle runtime artifacts only, not source artifacts
 
