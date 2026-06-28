@@ -8,6 +8,22 @@ import test from "node:test";
 const ROOT = process.cwd();
 const repoName = "miku-ms-office-skills";
 const skillName = "igapyon-miku-ms-office";
+const expectedRuntimeFiles = [
+  "miku-docx2md-1.0.0.1.jar",
+  "miku-docx2md-1.1.0.mjs",
+  "miku-docx2md-runtime-1.1.0.mjs",
+  "miku-md2docx-0.9.1.1.mjs",
+  "miku-md2docx-java-0.9.1.jar",
+  "miku-md2pptx-0.2.1.mjs",
+  "miku-md2pptx-java-0.2.2.jar",
+  "miku-md2xlsx-0.6.5.mjs",
+  "miku-md2xlsx-java-0.6.5.jar",
+  "miku-pptx2md-0.4.1.jar",
+  "miku-pptx2md-runtime-0.4.1.mjs",
+  "miku-xlsx2md-1.2.0.jar",
+  "miku-xlsx2md-runtime-1.2.0.json",
+  "miku-xlsx2md-runtime-1.2.0.mjs"
+];
 
 test("generated bundle works from an isolated install shape", () => {
   execFileSync("npm", ["run", "build:bundle"], {
@@ -24,25 +40,27 @@ test("generated bundle works from an isolated install shape", () => {
   assert.equal(fs.existsSync(path.resolve(installedSkillRoot, "index.json")), true);
 
   const runtimeRoot = path.resolve(installedSkillRoot, "runtime");
-  if (!fs.existsSync(runtimeRoot)) {
-    return;
-  }
+  assert.equal(fs.existsSync(runtimeRoot), true);
 
-  const runtimeFiles = fs.readdirSync(runtimeRoot);
-  const jar = runtimeFiles.find((name) => /^miku-.+-(?!sources-).+\.jar$/.test(name));
-  const mjs = runtimeFiles.find((name) => /^miku-.+-.+\.mjs$/.test(name));
+  const runtimeFiles = fs.readdirSync(runtimeRoot).sort();
+  assert.deepEqual(runtimeFiles, expectedRuntimeFiles);
 
-  if (jar) {
-    execFileSync("java", ["-jar", path.resolve(runtimeRoot, jar), "--version"], {
-      cwd: isolatedRoot,
-      encoding: "utf8"
-    });
-  }
-
-  if (mjs) {
-    execFileSync("node", [path.resolve(runtimeRoot, mjs), "--version"], {
-      cwd: isolatedRoot,
-      encoding: "utf8"
-    });
+  for (const runtimeFile of runtimeFiles) {
+    const runtimePath = path.resolve(runtimeRoot, runtimeFile);
+    if (runtimeFile.endsWith(".jar")) {
+      execFileSync("java", ["-jar", runtimePath, "--version"], {
+        cwd: isolatedRoot,
+        encoding: "utf8"
+      });
+    }
+    if (runtimeFile.endsWith(".mjs")) {
+      execFileSync("node", [runtimePath, "--version"], {
+        cwd: isolatedRoot,
+        encoding: "utf8"
+      });
+    }
+    if (runtimeFile.endsWith(".json")) {
+      JSON.parse(fs.readFileSync(runtimePath, "utf8"));
+    }
   }
 });

@@ -33,6 +33,76 @@
       "path": "agents/openai.yaml",
       "type": "file",
       "purpose": "Optional OpenAI agent metadata."
+    },
+    {
+      "path": "runtime/miku-docx2md-1.0.0.1.jar",
+      "type": "file",
+      "purpose": "Bundled Java runtime artifact."
+    },
+    {
+      "path": "runtime/miku-docx2md-1.1.0.mjs",
+      "type": "file",
+      "purpose": "Bundled Node.js runtime artifact."
+    },
+    {
+      "path": "runtime/miku-docx2md-runtime-1.1.0.mjs",
+      "type": "file",
+      "purpose": "Bundled Node.js runtime artifact."
+    },
+    {
+      "path": "runtime/miku-md2docx-0.9.1.1.mjs",
+      "type": "file",
+      "purpose": "Bundled Node.js runtime artifact."
+    },
+    {
+      "path": "runtime/miku-md2docx-java-0.9.1.jar",
+      "type": "file",
+      "purpose": "Bundled Java runtime artifact."
+    },
+    {
+      "path": "runtime/miku-md2pptx-0.2.1.mjs",
+      "type": "file",
+      "purpose": "Bundled Node.js runtime artifact."
+    },
+    {
+      "path": "runtime/miku-md2pptx-java-0.2.2.jar",
+      "type": "file",
+      "purpose": "Bundled Java runtime artifact."
+    },
+    {
+      "path": "runtime/miku-md2xlsx-0.6.5.mjs",
+      "type": "file",
+      "purpose": "Bundled Node.js runtime artifact."
+    },
+    {
+      "path": "runtime/miku-md2xlsx-java-0.6.5.jar",
+      "type": "file",
+      "purpose": "Bundled Java runtime artifact."
+    },
+    {
+      "path": "runtime/miku-pptx2md-0.4.1.jar",
+      "type": "file",
+      "purpose": "Bundled Java runtime artifact."
+    },
+    {
+      "path": "runtime/miku-pptx2md-runtime-0.4.1.mjs",
+      "type": "file",
+      "purpose": "Bundled Node.js runtime artifact."
+    },
+    {
+      "path": "runtime/miku-xlsx2md-1.2.0.jar",
+      "type": "file",
+      "purpose": "Bundled Java runtime artifact."
+    },
+    {
+      "path": "runtime/miku-xlsx2md-runtime-1.2.0.json",
+      "type": "file",
+      "purpose": "Bundled runtime metadata artifact."
+    },
+    {
+      "path": "runtime/miku-xlsx2md-runtime-1.2.0.mjs",
+      "type": "file",
+      "purpose": "Bundled Node.js runtime artifact."
     }
   ]
 }
