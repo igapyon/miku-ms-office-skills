@@ -46,8 +46,11 @@ visual asset extraction, or generic Office document editing.
 - If runtime artifacts are absent, use handoff-only guidance and tell the user
   what artifact or upstream command is needed.
 - Do not silently substitute a different converter family.
-- Preserve generated Office files, Markdown outputs, extracted media,
-  diagnostics, and intermediate artifacts in explicit paths.
+- For normal conversion, request only the primary output file. Do not add
+  summary, summary JSON, manifest, diagnostics, debug, asset, or intermediate
+  output options unless the user explicitly asks for them.
+- Preserve generated Office files, Markdown outputs, and any explicitly
+  requested extra artifacts in explicit paths.
 - Use `workplace/` for scratch outputs when the user does not specify an output
   location.
 

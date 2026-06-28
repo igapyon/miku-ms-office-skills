@@ -18,10 +18,10 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 ## Current State
 
 - `miku-ms-office-skills` has a runtime-aware Agent Skills package.
-- Current package version is `0.4.0`.
+- Current package version is `0.4.2`.
 - The installable skill is `skills/igapyon-miku-ms-office/`.
 - Runtime artifacts are bundled under `skills/igapyon-miku-ms-office/runtime/`.
-- `bundle/igapyon-miku-ms-office-skills-0.4.0.zip` was generated with bundled
+- `bundle/igapyon-miku-ms-office-skills-0.4.2.zip` was generated with bundled
   runtime artifacts.
 - The project goal has been updated to completing a distributable runtime-aware
   Agent Skills package, not just the initial skeleton.
