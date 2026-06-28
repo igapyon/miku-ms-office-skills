@@ -4,7 +4,31 @@
 miku-soft Microsoft Office and Markdown conversion tools from AI agent
 workflows.
 
-The installable skill is `igapyon-miku-ms-office`.
+The installable skill is `igapyon-miku-ms-office`. The current package version
+is `0.4.0`.
+
+Use this package when an AI agent needs to explicitly route between Microsoft
+Office files and Markdown with the miku-soft converter family.
+
+## Agent Usage
+
+Activate the skill explicitly in conversation:
+
+```text
+igapyon-miku-ms-office: convert input.docx to Markdown under workplace/
+```
+
+Supported directions:
+
+- `.xlsx` to Markdown
+- `.docx` to Markdown
+- `.pptx` to Markdown
+- Markdown to `.xlsx`
+- Markdown to `.docx`
+- Markdown to `.pptx`
+
+If no output path is provided, agents should use `workplace/` for scratch
+outputs.
 
 ## Scope
 
@@ -21,16 +45,14 @@ The initial scope covers these upstream families:
 - `miku-md2docx` and `miku-md2docx-java`
 - `miku-md2pptx` and `miku-md2pptx-java`
 
-## Quick Start
+## Build And Install
 
 1. Confirm bundled runtime artifacts under
    `skills/igapyon-miku-ms-office/runtime/`.
 2. Run `npm test`.
-3. Run `npm run build:bundle`.
+3. Run `npm run build`.
 4. Install `bundle/miku-ms-office-skills/skills/igapyon-miku-ms-office` into
    your skill home.
-5. In conversation, explicitly start with `igapyon-miku-ms-office` or
-   `miku-ms-office`.
 
 ## Repository Notes
 
@@ -52,6 +74,7 @@ objective, active tasks, decisions, and handoff notes for AI agent work.
 
 ```bash
 npm test
+npm run build
 npm run build:bundle
 npm run build:bundle:zip
 ```
