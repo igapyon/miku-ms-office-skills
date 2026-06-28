@@ -5,7 +5,7 @@ and run the appropriate miku-soft CLI converter for Microsoft Office and
 Markdown workflows.
 
 The installable skill is `igapyon-miku-ms-office`. The current package version
-is `0.4.0`.
+is `0.4.1`.
 
 It wraps existing CLI/runtime artifacts with routing, execution policy, and
 limitation guidance. It does not implement conversion logic itself.

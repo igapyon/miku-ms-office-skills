@@ -18,8 +18,8 @@ Choose the upstream tool from the requested source and target format.
    JavaScript behavior.
 3. Prefer the Java upstream when the user asks for Java, jar, Maven, or a
    Java-only environment.
-4. If the user does not specify a backend and both are available, prefer the
-   runtime artifact already present under `runtime/`.
+4. If the user does not specify a backend and both are available, follow
+   `runtime-policy.md` for the selected converter's CLI-capable artifact.
 5. If no runtime artifact is present, produce a handoff with the selected
    upstream repository and the required input/output paths.
 

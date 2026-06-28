@@ -2,7 +2,7 @@
   "title": "igapyon-miku-ms-office",
   "description": "Agent Skill for routing miku-soft Microsoft Office and Markdown conversion workflows.",
   "generatedBy": "manual-initial-skeleton",
-  "generatedAt": "2026-06-28",
+  "generatedAt": "2026-06-29",
   "files": [
     {
       "path": "SKILL.md",
@@ -45,12 +45,7 @@
       "purpose": "Bundled Node.js runtime artifact."
     },
     {
-      "path": "runtime/miku-docx2md-runtime-1.1.0.mjs",
-      "type": "file",
-      "purpose": "Bundled Node.js runtime artifact."
-    },
-    {
-      "path": "runtime/miku-md2docx-0.9.1.1.mjs",
+      "path": "runtime/miku-md2docx-0.9.2.mjs",
       "type": "file",
       "purpose": "Bundled Node.js runtime artifact."
     },
@@ -60,7 +55,7 @@
       "purpose": "Bundled Java runtime artifact."
     },
     {
-      "path": "runtime/miku-md2pptx-0.2.1.mjs",
+      "path": "runtime/miku-md2pptx-0.2.2.mjs",
       "type": "file",
       "purpose": "Bundled Node.js runtime artifact."
     },
@@ -70,7 +65,7 @@
       "purpose": "Bundled Java runtime artifact."
     },
     {
-      "path": "runtime/miku-md2xlsx-0.6.5.mjs",
+      "path": "runtime/miku-md2xlsx-0.6.6.mjs",
       "type": "file",
       "purpose": "Bundled Node.js runtime artifact."
     },
@@ -85,7 +80,7 @@
       "purpose": "Bundled Java runtime artifact."
     },
     {
-      "path": "runtime/miku-pptx2md-runtime-0.4.1.mjs",
+      "path": "runtime/miku-pptx2md-0.4.3.mjs",
       "type": "file",
       "purpose": "Bundled Node.js runtime artifact."
     },
@@ -95,12 +90,7 @@
       "purpose": "Bundled Java runtime artifact."
     },
     {
-      "path": "runtime/miku-xlsx2md-runtime-1.2.0.json",
-      "type": "file",
-      "purpose": "Bundled runtime metadata artifact."
-    },
-    {
-      "path": "runtime/miku-xlsx2md-runtime-1.2.0.mjs",
+      "path": "runtime/miku-xlsx2md-1.2.2.mjs",
       "type": "file",
       "purpose": "Bundled Node.js runtime artifact."
     }

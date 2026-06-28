@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
 // scripts/lib/cli-support.mjs
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { readFileSync } from "node:fs";
-import path2 from "node:path";
-import { fileURLToPath as fileURLToPath2 } from "node:url";
+import { readFile, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, resolve } from "node:path";
+import { mkdir } from "node:fs/promises";
 
 // dist/core.js
 import { default as default2 } from "node:path";
@@ -505,9 +504,9 @@ var VFile = class {
    * @returns {undefined}
    *   Nothing.
    */
-  set dirname(dirname) {
+  set dirname(dirname2) {
     assertPath(this.basename, "dirname");
-    this.path = default2.join(dirname || "", this.basename);
+    this.path = default2.join(dirname2 || "", this.basename);
   }
   /**
    * Get the extname (including dot) (example: `'.js'`).
@@ -564,13 +563,13 @@ var VFile = class {
    * @returns {undefined}
    *   Nothing.
    */
-  set path(path22) {
-    if (isUrl(path22)) {
-      path22 = fileURLToPath(path22);
+  set path(path2) {
+    if (isUrl(path2)) {
+      path2 = fileURLToPath(path2);
     }
-    assertNonEmpty(path22, "path");
-    if (this.path !== path22) {
-      this.history.push(path22);
+    assertNonEmpty(path2, "path");
+    if (this.path !== path2) {
+      this.history.push(path2);
     }
   }
   /**
@@ -837,8 +836,8 @@ function assertNonEmpty(part, name) {
     throw new Error("`" + name + "` cannot be empty");
   }
 }
-function assertPath(path22, name) {
-  if (!path22) {
+function assertPath(path2, name) {
+  if (!path2) {
     throw new Error("Setting `" + name + "` requires `path` to be set too");
   }
 }
@@ -1102,7 +1101,7 @@ var Processor = class _Processor extends CallableInstance {
     assertParser("process", this.parser || this.Parser);
     assertCompiler("process", this.compiler || this.Compiler);
     return done ? executor(void 0, done) : new Promise(executor);
-    function executor(resolve, reject) {
+    function executor(resolve2, reject) {
       const realFile = vfile(file);
       const parseTree = (
         /** @type {HeadTree extends undefined ? Node : HeadTree} */
@@ -1133,8 +1132,8 @@ var Processor = class _Processor extends CallableInstance {
       function realDone(error, file2) {
         if (error || !file2) {
           reject(error);
-        } else if (resolve) {
-          resolve(file2);
+        } else if (resolve2) {
+          resolve2(file2);
         } else {
           ok(done, "`done` is defined if `resolve` is not");
           done(void 0, file2);
@@ -1236,7 +1235,7 @@ var Processor = class _Processor extends CallableInstance {
       file = void 0;
     }
     return done ? executor(void 0, done) : new Promise(executor);
-    function executor(resolve, reject) {
+    function executor(resolve2, reject) {
       ok(
         typeof file !== "function",
         "`file` can\u2019t be a `done` anymore, we checked"
@@ -1250,8 +1249,8 @@ var Processor = class _Processor extends CallableInstance {
         );
         if (error) {
           reject(error);
-        } else if (resolve) {
-          resolve(resultingTree);
+        } else if (resolve2) {
+          resolve2(resultingTree);
         } else {
           ok(done, "`done` is defined if `resolve` is not");
           done(void 0, resultingTree, file2);
@@ -1912,7 +1911,7 @@ function transformGfmAutolinkLiterals(tree) {
     { ignore: ["link", "linkReference"] }
   );
 }
-function findUrl(_, protocol, domain2, path22, match) {
+function findUrl(_, protocol, domain2, path2, match) {
   let prefix = "";
   if (!previous(match)) {
     return false;
@@ -1925,7 +1924,7 @@ function findUrl(_, protocol, domain2, path22, match) {
   if (!isCorrectDomain(domain2)) {
     return false;
   }
-  const parts = splitUrl(domain2 + path22);
+  const parts = splitUrl(domain2 + path2);
   if (!parts[0]) return false;
   const result = {
     type: "link",
@@ -6005,10 +6004,10 @@ function resolveAll(constructs2, events, context) {
   const called = [];
   let index2 = -1;
   while (++index2 < constructs2.length) {
-    const resolve = constructs2[index2].resolveAll;
-    if (resolve && !called.includes(resolve)) {
-      events = resolve(events, context);
-      called.push(resolve);
+    const resolve2 = constructs2[index2].resolveAll;
+    if (resolve2 && !called.includes(resolve2)) {
+      events = resolve2(events, context);
+      called.push(resolve2);
     }
   }
   return events;
@@ -11459,194 +11458,602 @@ function remarkParse(options) {
     });
   }
 }
-function parseMarkdown(markdown) {
-  return unified().use(remarkParse).use(remarkGfm).parse(markdown);
+function collectImageRefs(node2) {
+  if (!node2) {
+    return [];
+  }
+  const refs = [];
+  if (node2.type === "image" && typeof node2.url === "string") {
+    refs.push({
+      alt: typeof node2.alt === "string" ? node2.alt : "",
+      path: node2.url
+    });
+  }
+  for (const child of node2.children ?? []) {
+    refs.push(...collectImageRefs(child));
+  }
+  return refs;
 }
 function extractText(node2) {
   if (!node2) {
     return "";
   }
+  if (node2.type === "image") {
+    const alt = typeof node2.alt === "string" ? node2.alt : "";
+    const url = typeof node2.url === "string" ? node2.url : "";
+    return url ? `![${alt}](${url})` : alt;
+  }
+  if (node2.type === "link") {
+    const label = Array.isArray(node2.children) ? node2.children.map((child) => extractText(child)).join("") : "";
+    const url = typeof node2.url === "string" ? node2.url : "";
+    if (label === url) {
+      return label;
+    }
+    return url ? `[${label}](${url})` : label;
+  }
   if (typeof node2.value === "string") {
     return node2.value;
   }
   if (Array.isArray(node2.children)) {
-    return node2.children.map((child) => extractText(child)).join(node2.type === "paragraph" ? "" : " ");
+    return node2.children.map((child) => extractText(child)).join("");
   }
   return "";
 }
-function extractTextRuns(node2) {
-  if (!node2) {
-    return [];
+function linkedCellFromChildren(children) {
+  const linkNodes = children.filter((child) => child.type === "link");
+  if (linkNodes.length !== 1) {
+    return void 0;
   }
-  if (node2.type === "link" && typeof node2.url === "string") {
-    const text5 = extractText(node2);
-    return text5 ? [{ text: text5, href: node2.url }] : [];
+  const link2 = linkNodes[0];
+  const linkIndex = children.indexOf(link2);
+  const before = children.slice(0, linkIndex).map((child) => extractText(child)).join("");
+  const after = children.slice(linkIndex + 1).map((child) => extractText(child)).join("");
+  const label = Array.isArray(link2.children) ? link2.children.map((child) => extractText(child)).join("") : "";
+  const url = typeof link2.url === "string" ? link2.url : "";
+  if (!url || before.trim()) {
+    return void 0;
   }
-  if (typeof node2.value === "string") {
-    return node2.value ? [{ text: node2.value }] : [];
+  const internalLocation = after.match(/^\s*\(([^()]+![A-Z]{1,3}\d+)\)\s*$/);
+  if (url.startsWith("#") && internalLocation) {
+    return {
+      value: label,
+      hyperlink: { target: internalLocation[1], kind: "internal" }
+    };
   }
-  if (Array.isArray(node2.children)) {
-    const runs = [];
-    for (const [index2, child] of node2.children.entries()) {
-      if (index2 > 0 && node2.type !== "paragraph" && runs.length > 0) {
-        runs.push({ text: " " });
-      }
-      runs.push(...extractTextRuns(child));
+  if (!after.trim() && isExternalLinkTarget(url)) {
+    return {
+      value: label,
+      hyperlink: { target: url, kind: "external" }
+    };
+  }
+  return void 0;
+}
+function isExternalLinkTarget(url) {
+  return /^[a-z][a-z0-9+.-]*:/i.test(url);
+}
+function richCellFromChildren(children, fallback) {
+  const runs = mergeRichTextRuns(inlineRichTextRuns(children));
+  if (!runs.length) {
+    return { value: fallback };
+  }
+  const value = runs.map((run) => run.text).join("");
+  return hasRichTextStyle(runs) || value !== fallback ? { value, richTextRuns: runs } : { value };
+}
+function inlineRichTextRuns(children, state = {}) {
+  const runs = [];
+  let underline = Boolean(state.underline);
+  for (const child of children) {
+    if (!child) {
+      continue;
     }
-    return runs;
+    if (child.type === "html") {
+      const html2 = String(child.value ?? "").trim().toLowerCase();
+      if (/^<br\s*\/?>$/.test(html2)) {
+        runs.push(richTextRun("\n", { ...state, underline }));
+      } else if (html2 === "<ins>") {
+        underline = true;
+      } else if (html2 === "</ins>") {
+        underline = false;
+      } else {
+        runs.push(richTextRun(String(child.value ?? ""), { ...state, underline }));
+      }
+      continue;
+    }
+    if (child.type === "text") {
+      runs.push(richTextRun(String(child.value ?? ""), { ...state, underline }));
+      continue;
+    }
+    if (child.type === "break") {
+      runs.push(richTextRun("\n", { ...state, underline }));
+      continue;
+    }
+    if (child.type === "strong") {
+      runs.push(...inlineRichTextRuns(child.children ?? [], { ...state, underline, bold: true }));
+      continue;
+    }
+    if (child.type === "emphasis") {
+      runs.push(...inlineRichTextRuns(child.children ?? [], { ...state, underline, italic: true }));
+      continue;
+    }
+    if (child.type === "delete") {
+      runs.push(...inlineRichTextRuns(child.children ?? [], { ...state, underline, strike: true }));
+      continue;
+    }
+    if (child.type === "link") {
+      runs.push(richTextRun(extractText(child), { ...state, underline }));
+      continue;
+    }
+    if (Array.isArray(child.children)) {
+      runs.push(...inlineRichTextRuns(child.children, { ...state, underline }));
+      continue;
+    }
+    if (typeof child.value === "string") {
+      runs.push(richTextRun(child.value, { ...state, underline }));
+    }
   }
-  return [];
+  return runs;
 }
-function normalizeLine(value) {
-  return value.replace(/\s+/g, " ").trim();
+function richTextRun(text5, state) {
+  return {
+    text: text5,
+    ...state.bold ? { bold: true } : {},
+    ...state.italic ? { italic: true } : {},
+    ...state.strike ? { strike: true } : {},
+    ...state.underline ? { underline: true } : {}
+  };
 }
-function normalizeRuns(runs) {
+function mergeRichTextRuns(runs) {
   const merged = [];
   for (const run of runs) {
-    const text5 = run.text.replace(/\s+/g, " ");
-    if (!text5) {
+    if (!run.text) {
       continue;
     }
     const previous3 = merged[merged.length - 1];
-    if (previous3 && previous3.href === run.href) {
-      previous3.text += text5;
+    if (previous3 && Boolean(previous3.bold) === Boolean(run.bold) && Boolean(previous3.italic) === Boolean(run.italic) && Boolean(previous3.strike) === Boolean(run.strike) && Boolean(previous3.underline) === Boolean(run.underline)) {
+      previous3.text += run.text;
     } else {
-      merged.push(run.href ? { text: text5, href: run.href } : { text: text5 });
+      merged.push({ ...run });
     }
   }
-  const joined = merged.map((run) => run.text).join("").trim();
-  if (!joined) {
+  return merged;
+}
+function hasRichTextStyle(runs) {
+  return runs.some((run) => run.bold || run.italic || run.strike || run.underline);
+}
+function extractCell(node2) {
+  const children = inlineChildren(node2);
+  return linkedCellFromChildren(children) ?? richCellFromChildren(children, extractText(node2));
+}
+function inlineChildren(node2) {
+  if (!Array.isArray(node2?.children)) {
     return [];
   }
-  let trimStart = merged.findIndex((run) => run.text.trimStart().length > 0);
-  if (trimStart < 0) {
-    return [];
+  if (node2.children.length === 1 && node2.children[0]?.type === "paragraph" && Array.isArray(node2.children[0].children)) {
+    return node2.children[0].children;
   }
-  merged.splice(0, trimStart);
-  trimStart = 0;
-  merged[trimStart].text = merged[trimStart].text.trimStart();
-  merged[merged.length - 1].text = merged[merged.length - 1].text.trimEnd();
-  return merged.filter((run) => run.text.length > 0);
+  return node2.children;
 }
-function textBlockFromRuns(runs, prefix = "") {
-  const normalized = normalizeRuns(runs);
-  if (normalized.length === 0) {
-    return [];
+function parseMarkdown(markdown) {
+  return unified().use(remarkParse).use(remarkGfm).parse(markdown);
+}
+function styleRoleForTableCell(rowIndex, headerRow, tableStyle) {
+  return headerRow && rowIndex === 0 ? "tableHeader" : tableStyle === "plain" ? "normal" : "tableCell";
+}
+function repairEscapedPipeCells(values, expectedColumns) {
+  if (expectedColumns < 1 || values.length <= expectedColumns) {
+    return values;
   }
-  const prefixedRuns = prefix ? [{ text: prefix }, ...normalized] : normalized;
-  return [{ kind: "text", text: prefixedRuns.map((run) => run.text).join(""), runs: prefixedRuns }];
-}
-function parseSpeakerNotesHtml(value) {
-  const match = value.match(/^\s*<!--\s*speaker-notes(?::|\s)([\s\S]*?)-->\s*$/i);
-  if (!match) {
-    return [];
-  }
-  return match[1].split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => [{ text: line }]);
-}
-function tableRows(node2) {
-  const rows = Array.isArray(node2.children) ? node2.children : [];
-  return rows.map((row) => {
-    const cells = Array.isArray(row.children) ? row.children : [];
-    return cells.map((cell) => {
-      const runs = normalizeRuns(extractTextRuns(cell));
-      return { text: runs.map((run) => run.text).join(""), runs };
-    });
-  }).filter((row) => row.length > 0);
-}
-function listBlocks(node2, depth = 0) {
-  const blocks = [];
-  const items = Array.isArray(node2.children) ? node2.children : [];
-  for (const item of items) {
-    const children = Array.isArray(item.children) ? item.children : [];
-    const runs = [];
-    for (const child of children) {
-      if (child.type === "list") {
-        continue;
-      }
-      runs.push(...extractTextRuns(child));
+  const repaired = [];
+  for (let index2 = 0; index2 < values.length; index2 += 1) {
+    let value = values[index2];
+    while (value.endsWith("\\") && repaired.length + (values.length - index2) > expectedColumns && index2 + 1 < values.length) {
+      index2 += 1;
+      value = `${value}| ${values[index2].replace(/^\s+/, "")}`;
     }
-    const normalized = normalizeRuns(runs);
-    if (normalized.length > 0) {
-      const prefix = `${"  ".repeat(depth)}- `;
-      blocks.push({ kind: "text", text: `${prefix}${normalized.map((run) => run.text).join("")}`, runs: [{ text: prefix }, ...normalized] });
-    }
-    for (const child of children) {
-      if (child.type === "list") {
-        blocks.push(...listBlocks(child, depth + 1));
-      }
-    }
+    repaired.push(value);
   }
-  return blocks;
+  return repaired;
 }
-function nodeBlocks(node2) {
-  switch (node2.type) {
-    case "image":
-      return [{
-        kind: "image",
-        altText: typeof node2.alt === "string" ? node2.alt : "",
-        url: typeof node2.url === "string" ? node2.url : ""
-      }];
-    case "paragraph":
-      if (Array.isArray(node2.children) && node2.children.length === 1 && node2.children[0]?.type === "image") {
-        return nodeBlocks(node2.children[0]);
-      }
-      return textBlockFromRuns(extractTextRuns(node2));
-    case "list":
-      return listBlocks(node2);
-    case "code":
-      return String(node2.value ?? "").split(/\r?\n/).map((line) => ({ kind: "text", text: `    ${line}`, runs: [{ text: `    ${line}` }] }));
-    case "blockquote":
-      return (node2.children ?? []).flatMap((child) => nodeBlocks(child).map(
-        (block) => block.kind === "text" ? { kind: "text", text: `> ${block.text}`, runs: [{ text: "> " }, ...block.runs] } : block
-      ));
-    case "table":
-      return [{ kind: "table", rows: tableRows(node2) }];
-    case "thematicBreak":
-      return [{ kind: "text", text: "---", runs: [{ text: "---" }] }];
-    default: {
-      const text5 = normalizeLine(extractText(node2));
-      return text5 ? [{ kind: "text", text: text5, runs: [{ text: text5 }] }] : [];
-    }
-  }
+function tableRows(node2, headerRow, tableStyle) {
+  const rawRows = (node2.children ?? []).map((row) => (row.children ?? []).map((cell) => {
+    const content3 = extractCell(cell);
+    return { ...content3, value: content3.value.trim() };
+  }));
+  const expectedColumns = rawRows[0]?.length ?? 0;
+  return rawRows.map((row, rowIndex) => ({
+    kind: "table",
+    cells: repairEscapedPipeCells(row.map((cell) => cell.value), expectedColumns).map((value, index2) => {
+      const sourceCell = row[index2];
+      const richTextRuns = sourceCell?.richTextRuns && sourceCell.value === value ? sourceCell.richTextRuns : void 0;
+      return {
+        value,
+        hyperlink: sourceCell?.hyperlink,
+        richTextRuns,
+        styleRole: styleRoleForTableCell(rowIndex, headerRow, tableStyle)
+      };
+    })
+  }));
 }
-function markdownToSlides(markdown, options = {}) {
-  const tree = parseMarkdown(markdown);
-  const slides = [];
-  let current;
-  function ensureSlide() {
-    if (!current) {
-      current = { title: options.title ?? "Markdown deck", blocks: [], notes: [] };
-      slides.push(current);
-    }
-    return current;
+function paragraphTableRows(text5, headerRow, tableStyle) {
+  const lines = text5.split(/\r?\n/).filter((line) => line.trim());
+  if (lines.length < 2 || !isMarkdownTableSeparator(lines[1])) {
+    return void 0;
   }
-  for (const node2 of tree.children ?? []) {
-    if (node2.type === "heading" && (node2.depth === 1 || node2.depth === 2)) {
-      current = { title: normalizeLine(extractText(node2)) || "Untitled slide", blocks: [], notes: [] };
-      slides.push(current);
+  const rawRows = [lines[0], ...lines.slice(2)].map((line) => splitMarkdownTableLine(line).map(unescapeMarkdownTableCell));
+  const expectedColumns = rawRows[0]?.length ?? 0;
+  if (expectedColumns < 1 || rawRows.some((row) => row.length !== expectedColumns)) {
+    return void 0;
+  }
+  return rawRows.map((row, rowIndex) => ({
+    kind: "table",
+    cells: row.map((value) => ({
+      value: value.replace(/<br\s*\/?>/gi, "\n"),
+      styleRole: styleRoleForTableCell(rowIndex, headerRow, tableStyle)
+    }))
+  }));
+}
+function splitMarkdownTableLine(line) {
+  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  const cells = [];
+  let cell = "";
+  for (let index2 = 0; index2 < trimmed.length; index2 += 1) {
+    const char = trimmed[index2];
+    if (char === "|" && trimmed[index2 - 1] !== "\\") {
+      cells.push(cell.trim());
+      cell = "";
       continue;
     }
-    if (node2.type === "html" && typeof node2.value === "string") {
-      const notes = parseSpeakerNotesHtml(node2.value);
-      if (notes.length > 0) {
-        ensureSlide().notes.push(...notes);
-        continue;
+    cell += char;
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+function isMarkdownTableSeparator(line) {
+  const cells = splitMarkdownTableLine(line);
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell.trim()));
+}
+function unescapeMarkdownTableCell(value) {
+  return value.replace(/\\([\\`*{}[\]()#+\-.!_|~])/g, "$1");
+}
+function blankRow() {
+  return { kind: "blank", cells: [{ value: "" }] };
+}
+function textRow(kind, value, styleRole = "normal") {
+  return { kind, cells: [{ value, styleRole }] };
+}
+function headingStyleRole(depth) {
+  switch (depth) {
+    case 1:
+      return "heading1";
+    case 2:
+      return "heading2";
+    case 3:
+      return "heading3";
+    case 4:
+      return "heading4";
+    case 5:
+      return "heading5";
+    default:
+      return "heading6";
+  }
+}
+function imageRow(value, imageRefs) {
+  return { kind: "image", cells: [{ value, styleRole: "normal" }], imageRefs };
+}
+function quoteText(value) {
+  return value.split(/\r?\n/).map((line) => `> ${line}`).join("\n");
+}
+function listItemText(item) {
+  const parts = [];
+  for (const child of item.children ?? []) {
+    if (child.type === "paragraph") {
+      parts.push(extractText(child).trim());
+    }
+  }
+  return parts.filter(Boolean).join(" ");
+}
+function listRow(value, depth) {
+  return {
+    kind: "list",
+    cells: [
+      ...Array.from({ length: depth }, () => ({ value: "", styleRole: "normal" })),
+      { value, styleRole: "normal" }
+    ]
+  };
+}
+function appendListRows(rows, node2, depth = 0) {
+  const ordered = Boolean(node2.ordered);
+  let index2 = Number(node2.start ?? 1);
+  for (const item of node2.children ?? []) {
+    const marker = ordered ? `${index2}.` : "-";
+    const text5 = listItemText(item);
+    if (text5) {
+      rows.push(listRow(`${marker} ${text5}`, depth));
+    }
+    for (const child of item.children ?? []) {
+      if (child.type === "list") {
+        appendListRows(rows, child, depth + 1);
       }
     }
-    const blocks = nodeBlocks(node2);
-    if (blocks.length > 0) {
-      ensureSlide().blocks.push(...blocks);
+    index2 += 1;
+  }
+}
+function blockToRows(node2, options) {
+  switch (node2.type) {
+    case "heading":
+      return [textRow(node2.depth === 1 ? "title" : "heading", extractText(node2).trim(), headingStyleRole(node2.depth))];
+    case "paragraph": {
+      const cell = extractCell(node2);
+      const text5 = cell.value.trim();
+      if (!text5) {
+        return [];
+      }
+      const table = paragraphTableRows(text5, options.headerRow, options.tableStyle);
+      if (table) {
+        return table;
+      }
+      const imageRefs = collectImageRefs(node2);
+      return imageRefs.length ? [imageRow(text5, imageRefs)] : [{ kind: "paragraph", cells: [{ ...cell, value: text5, styleRole: "normal" }] }];
+    }
+    case "list": {
+      const rows = [];
+      appendListRows(rows, node2);
+      return rows;
+    }
+    case "blockquote":
+      return (node2.children ?? []).flatMap((child) => blockToRows(child, options)).map((row) => ({
+        ...row,
+        kind: row.kind === "table" ? row.kind : "paragraph",
+        cells: row.cells.map((cell, index2) => ({
+          ...cell,
+          value: index2 === 0 ? quoteText(cell.value) : cell.value
+        }))
+      }));
+    case "table":
+      return tableRows(node2, options.headerRow, options.tableStyle);
+    case "code":
+      return [textRow("code", String(node2.value ?? ""), "code")];
+    case "html": {
+      const text5 = String(node2.value ?? "").trim();
+      return text5 ? [textRow("paragraph", text5)] : [];
+    }
+    case "thematicBreak":
+      return [textRow("separator", "", "separator")];
+    default:
+      return [];
+  }
+}
+var MIN_COLUMN_WIDTH = 10;
+var MAX_COLUMN_WIDTH = 48;
+var TEXT_BLOCK_MIN_WIDTH = 28;
+var CODE_BLOCK_MIN_WIDTH = 32;
+function minimumWidthForRow(row) {
+  switch (row.kind) {
+    case "paragraph":
+    case "list":
+    case "heading":
+    case "title":
+      return TEXT_BLOCK_MIN_WIDTH;
+    case "code":
+      return CODE_BLOCK_MIN_WIDTH;
+    default:
+      return MIN_COLUMN_WIDTH;
+  }
+}
+function computeColumnHints(rows) {
+  const hints = [];
+  for (const row of rows) {
+    const rowMinimum = minimumWidthForRow(row);
+    row.cells.forEach((cell, index2) => {
+      const minimum = index2 === 0 ? rowMinimum : MIN_COLUMN_WIDTH;
+      const width = Math.min(Math.max([...cell.value].length + 2, minimum), MAX_COLUMN_WIDTH);
+      hints[index2] = Math.max(hints[index2] ?? 0, width);
+    });
+  }
+  return hints.length ? hints : [16];
+}
+function buildSheets(tree, options) {
+  if (options.sheetMode !== "heading") {
+    const name = options.title ?? "Sheet1";
+    const rows = [];
+    for (const child of tree.children ?? []) {
+      appendBlockRows(rows, child, options);
+    }
+    return [finalizeSheet({ name: sanitizeSheetName(name), rows })];
+  }
+  const usedNames = /* @__PURE__ */ new Set();
+  const sheets = [];
+  let current = { name: uniqueSheetName(options.title ?? "Sheet1", usedNames), rows: [] };
+  const prefaceRows = [];
+  let hasSplit = false;
+  for (const child of tree.children ?? []) {
+    const rows = blockToRows(child, options);
+    if (child.type === "heading" && child.depth === options.sheetHeadingDepth) {
+      if (hasSplit && current.rows.length) {
+        sheets.push(finalizeSheet(current));
+      }
+      current = { name: uniqueSheetName(extractText(child), usedNames), rows: hasSplit ? [] : [...prefaceRows] };
+      current.rows.push(...rows);
+      hasSplit = true;
+      continue;
+    }
+    if (hasSplit) {
+      appendRows(current.rows, child, rows);
+    } else {
+      appendRows(prefaceRows, child, rows);
     }
   }
-  if (slides.length === 0) {
-    slides.push({ title: options.title ?? "Markdown deck", blocks: [], notes: [] });
+  if (hasSplit && (current.rows.length || sheets.length === 0)) {
+    sheets.push(finalizeSheet(current));
+  } else if (!hasSplit) {
+    sheets.push(finalizeSheet({ ...current, rows: prefaceRows }));
   }
-  if (options.title && slides[0]) {
-    slides[0].title = options.title;
-  }
-  return slides;
+  return sheets;
 }
-var encoder = new TextEncoder();
+function appendBlockRows(rows, child, options) {
+  appendRows(rows, child, blockToRows(child, options));
+}
+function appendRows(target, child, rows) {
+  if (child.type === "heading" && shouldInsertBlankBeforeHeading(target)) {
+    target.push(blankRow());
+  }
+  target.push(...rows);
+}
+function shouldInsertBlankBeforeHeading(rows) {
+  if (!rows.length) {
+    return false;
+  }
+  const previous3 = rows[rows.length - 1];
+  return previous3.kind !== "blank" && previous3.kind !== "heading" && previous3.kind !== "title";
+}
+function sanitizeSheetName(name) {
+  const sanitized = name.replace(/[\[\]:*?/\\]/g, " ").replace(/\s+/g, " ").trim();
+  return (sanitized || "Sheet").slice(0, 31);
+}
+function uniqueSheetName(base, used) {
+  const clean = sanitizeSheetName(base);
+  let candidate = clean;
+  let suffix = 2;
+  while (used.has(candidate)) {
+    const tail = ` ${suffix}`;
+    candidate = `${clean.slice(0, 31 - tail.length)}${tail}`;
+    suffix += 1;
+  }
+  used.add(candidate);
+  return candidate;
+}
+function finalizeSheet(sheet) {
+  const rows = sheet.rows.length ? sheet.rows : [blankRow()];
+  return {
+    ...sheet,
+    rows,
+    columnHints: computeColumnHints(rows)
+  };
+}
+function markdownToWorkbook(markdown, options = {}) {
+  const tree = parseMarkdown(markdown);
+  const headerRow = options.headerRow ?? true;
+  const tableStyle = options.tableStyle ?? "bordered";
+  const sheetHeadingDepth = options.sheetHeadingDepth ?? 1;
+  const sheets = buildSheets(tree, {
+    headerRow,
+    tableStyle,
+    sheetMode: options.sheetMode,
+    sheetHeadingDepth,
+    title: options.title
+  });
+  return { sheets: normalizeInternalHyperlinkTargets(sheets), imageAssets: options.imageAssets };
+}
+function normalizeInternalHyperlinkTargets(sheets) {
+  const sheetNames = new Set(sheets.map((sheet) => sheet.name));
+  return sheets.map((sheet) => ({
+    ...sheet,
+    rows: sheet.rows.map((row) => ({
+      ...row,
+      cells: row.cells.map((cell) => {
+        if (cell.hyperlink?.kind !== "internal") {
+          return cell;
+        }
+        const match = cell.hyperlink.target.match(/^([^!]+)!(.+)$/);
+        if (!match || sheetNames.has(unquoteSheetName(match[1]))) {
+          return cell;
+        }
+        const xlsx2mdSheetName = `Sheet ${unquoteSheetName(match[1])}`;
+        if (!sheetNames.has(xlsx2mdSheetName)) {
+          return cell;
+        }
+        return {
+          ...cell,
+          hyperlink: {
+            ...cell.hyperlink,
+            target: `${quoteSheetName(xlsx2mdSheetName)}!${match[2]}`
+          }
+        };
+      })
+    }))
+  }));
+}
+function unquoteSheetName(name) {
+  const trimmed = name.trim();
+  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+    return trimmed.slice(1, -1).replace(/''/g, "'");
+  }
+  return trimmed;
+}
+function quoteSheetName(name) {
+  return /^[A-Za-z0-9_]+$/.test(name) ? name : `'${name.replace(/'/g, "''")}'`;
+}
+var textEncoder = new TextEncoder();
+var textDecoder = new TextDecoder();
+function writeUint16(buffer, offset, value) {
+  buffer[offset] = value & 255;
+  buffer[offset + 1] = value >>> 8 & 255;
+}
+function writeUint32(buffer, offset, value) {
+  buffer[offset] = value & 255;
+  buffer[offset + 1] = value >>> 8 & 255;
+  buffer[offset + 2] = value >>> 16 & 255;
+  buffer[offset + 3] = value >>> 24 & 255;
+}
+function concatBytes(parts) {
+  const total = parts.reduce((sum, part) => sum + part.length, 0);
+  const output = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) {
+    output.set(part, offset);
+    offset += part.length;
+  }
+  return output;
+}
+function asBytes(data) {
+  return typeof data === "string" ? textEncoder.encode(data) : data;
+}
+function normalizeOpcPartPath(partPath) {
+  const withoutHash = partPath.split("#", 1)[0] ?? "";
+  const raw = withoutHash.replace(/\\/g, "/").replace(/^\/+/, "");
+  const parts = [];
+  for (const part of raw.split("/")) {
+    if (part === "" || part === ".") {
+      continue;
+    }
+    if (part === "..") {
+      if (parts.length === 0) {
+        throw new Error(`OPC part path escapes package root: ${partPath}`);
+      }
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  if (parts.length === 0) {
+    throw new Error(`OPC part path is empty: ${partPath}`);
+  }
+  return parts.join("/");
+}
+function compareOpcPartPaths(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function escapeXmlText(value) {
+  return sanitizeXmlText(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function escapeXmlAttribute(value) {
+  return escapeXmlText(value).replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+function sanitizeXmlText(value) {
+  return value.replace(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD]/g, "");
+}
+function buildOpcContentTypesXml(contentTypes2) {
+  const defaults = contentTypes2.defaults.map((item) => `<Default Extension="${escapeXmlAttribute(item.extension)}" ContentType="${escapeXmlAttribute(item.contentType)}"/>`).join("");
+  const overrides = contentTypes2.overrides.map((item) => `<Override PartName="/${escapeXmlAttribute(normalizeOpcPartPath(item.partName))}" ContentType="${escapeXmlAttribute(item.contentType)}"/>`).join("");
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">${defaults}${overrides}</Types>`;
+}
+function buildOpcRelationshipsXml(relationships) {
+  const rels = relationships.map((relationship) => {
+    const targetMode = relationship.targetMode === void 0 ? "" : ` TargetMode="${escapeXmlAttribute(relationship.targetMode)}"`;
+    return `<Relationship Id="${escapeXmlAttribute(relationship.id)}" Type="${escapeXmlAttribute(relationship.type)}" Target="${escapeXmlAttribute(relationship.target)}"${targetMode}/>`;
+  }).join("");
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`;
+}
 var crcTable = new Uint32Array(256);
 for (let i = 0; i < 256; i += 1) {
   let c = i;
@@ -11662,526 +12069,713 @@ function crc32(data) {
   }
   return (crc ^ 4294967295) >>> 0;
 }
-function asBytes(data) {
-  return typeof data === "string" ? encoder.encode(data) : data;
-}
-function writeUint16(buffer, offset, value) {
-  buffer[offset] = value & 255;
-  buffer[offset + 1] = value >>> 8 & 255;
-}
-function writeUint32(buffer, offset, value) {
-  buffer[offset] = value & 255;
-  buffer[offset + 1] = value >>> 8 & 255;
-  buffer[offset + 2] = value >>> 16 & 255;
-  buffer[offset + 3] = value >>> 24 & 255;
-}
-function concat(parts) {
-  const total = parts.reduce((sum, part) => sum + part.length, 0);
-  const output = new Uint8Array(total);
-  let offset = 0;
-  for (const part of parts) {
-    output.set(part, offset);
-    offset += part.length;
+var EOCD_SIGNATURE = 101010256;
+var CENTRAL_DIRECTORY_SIGNATURE = 33639248;
+var LOCAL_FILE_SIGNATURE = 67324752;
+var ZIP_GENERAL_PURPOSE_FLAG_UTF8 = 2048;
+var FIXED_TIMESTAMP = new Date(Date.UTC(1980, 0, 1, 0, 0, 0));
+function writeZipPackage(entries, options = {}) {
+  const order2 = options.order ?? "stable";
+  const prepared = prepareZipEntries(entries, options);
+  if (order2 === "stable") {
+    prepared.sort((a, b) => compareOpcPartPaths(a.path, b.path));
   }
-  return output;
-}
-function createZip(entries) {
   const localParts = [];
   const centralParts = [];
   let offset = 0;
-  for (const entry of entries) {
-    const nameBytes = encoder.encode(entry.path);
-    const data = asBytes(entry.data);
-    const crc = crc32(data);
-    const localHeader = new Uint8Array(30 + nameBytes.length);
-    writeUint32(localHeader, 0, 67324752);
-    writeUint16(localHeader, 4, 20);
-    writeUint16(localHeader, 6, 2048);
-    writeUint16(localHeader, 8, 0);
-    writeUint16(localHeader, 10, 0);
-    writeUint16(localHeader, 12, 0);
-    writeUint32(localHeader, 14, crc);
-    writeUint32(localHeader, 18, data.length);
-    writeUint32(localHeader, 22, data.length);
-    writeUint16(localHeader, 26, nameBytes.length);
-    writeUint16(localHeader, 28, 0);
-    localHeader.set(nameBytes, 30);
-    localParts.push(localHeader, data);
-    const centralHeader = new Uint8Array(46 + nameBytes.length);
-    writeUint32(centralHeader, 0, 33639248);
-    writeUint16(centralHeader, 4, 20);
-    writeUint16(centralHeader, 6, 20);
-    writeUint16(centralHeader, 8, 2048);
-    writeUint16(centralHeader, 10, 0);
-    writeUint16(centralHeader, 12, 0);
-    writeUint16(centralHeader, 14, 0);
-    writeUint32(centralHeader, 16, crc);
-    writeUint32(centralHeader, 20, data.length);
-    writeUint32(centralHeader, 24, data.length);
-    writeUint16(centralHeader, 28, nameBytes.length);
-    writeUint16(centralHeader, 30, 0);
-    writeUint16(centralHeader, 32, 0);
-    writeUint16(centralHeader, 34, 0);
-    writeUint16(centralHeader, 36, 0);
-    writeUint32(centralHeader, 38, 0);
-    writeUint32(centralHeader, 42, offset);
-    centralHeader.set(nameBytes, 46);
-    centralParts.push(centralHeader);
-    offset += localHeader.length + data.length;
+  for (const entry of prepared) {
+    const serialized = serializeZipEntry(entry, offset, options.compressionLevel);
+    localParts.push(serialized.localHeader, serialized.compressed);
+    centralParts.push(serialized.centralHeader);
+    offset += serialized.localHeader.length + serialized.compressed.length;
   }
-  const centralDirectory = concat(centralParts);
+  const centralDirectory = concatBytes(centralParts);
+  const end = buildEndOfCentralDirectory(prepared.length, centralDirectory.length, offset);
+  return concatBytes([...localParts, centralDirectory, end]);
+}
+function prepareZipEntries(entries, options) {
+  const timestamp = options.timestamp ?? FIXED_TIMESTAMP;
+  const compression = options.compression ?? "store";
+  return entries.map((entry) => ({
+    path: normalizeOpcPartPath(entry.path),
+    data: asBytes(entry.data),
+    compression: entry.compression ?? compression,
+    modifiedAt: entry.modifiedAt ?? timestamp
+  }));
+}
+function serializeZipEntry(entry, localHeaderOffset, compressionLevel) {
+  const nameBytes = textEncoder.encode(entry.path);
+  const method = entry.compression === "store" ? 0 : 8;
+  const compressed = compressZipEntryData(entry, compressionLevel);
+  const crc = crc32(entry.data);
+  const dosTime = toDosTime(entry.modifiedAt);
+  const dosDate = toDosDate(entry.modifiedAt);
+  return {
+    localHeader: buildLocalFileHeader(entry, nameBytes, method, compressed.length, crc, dosTime, dosDate),
+    centralHeader: buildCentralDirectoryHeader(
+      entry,
+      nameBytes,
+      method,
+      compressed.length,
+      crc,
+      dosTime,
+      dosDate,
+      localHeaderOffset
+    ),
+    compressed
+  };
+}
+function compressZipEntryData(entry, compressionLevel) {
+  return entry.compression === "store" ? entry.data : new Uint8Array(getNodeZlib().deflateRawSync(entry.data, { level: compressionLevel ?? 9 }));
+}
+function buildLocalFileHeader(entry, nameBytes, method, compressedSize, crc, dosTime, dosDate) {
+  const localHeader = new Uint8Array(30 + nameBytes.length);
+  writeUint32(localHeader, 0, LOCAL_FILE_SIGNATURE);
+  writeUint16(localHeader, 4, 20);
+  writeUint16(localHeader, 6, ZIP_GENERAL_PURPOSE_FLAG_UTF8);
+  writeUint16(localHeader, 8, method);
+  writeUint16(localHeader, 10, dosTime);
+  writeUint16(localHeader, 12, dosDate);
+  writeUint32(localHeader, 14, crc);
+  writeUint32(localHeader, 18, compressedSize);
+  writeUint32(localHeader, 22, entry.data.length);
+  writeUint16(localHeader, 26, nameBytes.length);
+  writeUint16(localHeader, 28, 0);
+  localHeader.set(nameBytes, 30);
+  return localHeader;
+}
+function buildCentralDirectoryHeader(entry, nameBytes, method, compressedSize, crc, dosTime, dosDate, localHeaderOffset) {
+  const centralHeader = new Uint8Array(46 + nameBytes.length);
+  writeUint32(centralHeader, 0, CENTRAL_DIRECTORY_SIGNATURE);
+  writeUint16(centralHeader, 4, 20);
+  writeUint16(centralHeader, 6, 20);
+  writeUint16(centralHeader, 8, ZIP_GENERAL_PURPOSE_FLAG_UTF8);
+  writeUint16(centralHeader, 10, method);
+  writeUint16(centralHeader, 12, dosTime);
+  writeUint16(centralHeader, 14, dosDate);
+  writeUint32(centralHeader, 16, crc);
+  writeUint32(centralHeader, 20, compressedSize);
+  writeUint32(centralHeader, 24, entry.data.length);
+  writeUint16(centralHeader, 28, nameBytes.length);
+  writeUint16(centralHeader, 30, 0);
+  writeUint16(centralHeader, 32, 0);
+  writeUint16(centralHeader, 34, 0);
+  writeUint16(centralHeader, 36, 0);
+  writeUint32(centralHeader, 38, 0);
+  writeUint32(centralHeader, 42, localHeaderOffset);
+  centralHeader.set(nameBytes, 46);
+  return centralHeader;
+}
+function buildEndOfCentralDirectory(entryCount, centralDirectorySize, centralDirectoryOffset) {
   const end = new Uint8Array(22);
-  writeUint32(end, 0, 101010256);
+  writeUint32(end, 0, EOCD_SIGNATURE);
   writeUint16(end, 4, 0);
   writeUint16(end, 6, 0);
-  writeUint16(end, 8, entries.length);
-  writeUint16(end, 10, entries.length);
-  writeUint32(end, 12, centralDirectory.length);
-  writeUint32(end, 16, offset);
+  writeUint16(end, 8, entryCount);
+  writeUint16(end, 10, entryCount);
+  writeUint32(end, 12, centralDirectorySize);
+  writeUint32(end, 16, centralDirectoryOffset);
   writeUint16(end, 20, 0);
-  return concat([...localParts, centralDirectory, end]);
+  return end;
 }
-function collectDiagnostics(slides, options) {
-  const diagnostics = [];
-  for (const slide of slides) {
-    for (const block of slide.blocks) {
-      if (block.kind === "text" && block.text.includes("<") && block.text.includes(">")) {
-        diagnostics.push({
-          severity: "warning",
-          code: "possible-raw-html-text",
-          message: "Raw HTML-like text was emitted as plain slide text.",
-          ...options.sourcePath ? { source: options.sourcePath } : {}
-        });
-      }
-    }
+function toDosTime(date) {
+  return date.getUTCHours() << 11 | date.getUTCMinutes() << 5 | Math.floor(date.getUTCSeconds() / 2);
+}
+function toDosDate(date) {
+  const year = Math.max(1980, date.getUTCFullYear());
+  return year - 1980 << 9 | date.getUTCMonth() + 1 << 5 | date.getUTCDate();
+}
+function getNodeZlib() {
+  const runtime = globalThis;
+  const getBuiltinModule = runtime.process?.getBuiltinModule;
+  const zlib = typeof getBuiltinModule === "function" ? getBuiltinModule("node:zlib") ?? getBuiltinModule("zlib") : void 0;
+  if (zlib !== void 0 && typeof zlib.deflateRawSync === "function" && typeof zlib.inflateRawSync === "function") {
+    return zlib;
   }
-  return diagnostics;
+  throw new Error("Node zlib is required for synchronous ZIP deflate operations. Use stored entries, readZipPackageAsync with DecompressionStream, or inject an async inflater.");
 }
-function normalizeImageExtension(image2) {
-  if (image2.extension === "jpeg" || image2.extension === "jpg") {
-    return "jpg";
+var IMAGE_PREVIEW_COLUMNS = 3;
+var IMAGE_PREVIEW_ROWS = 6;
+function xml(value) {
+  return sanitizeXmlText2(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+function sanitizeXmlText2(value) {
+  return value.replace(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD]/g, "");
+}
+function inlineTextXml(value) {
+  const sanitized = sanitizeXmlText2(value);
+  const preserve = sanitized.length === 0 || /^\s|\s$/.test(sanitized) || /[\n\r\t]/.test(sanitized);
+  const attribute = preserve ? ` xml:space="preserve"` : "";
+  return `<t${attribute}>${xml(sanitized)}</t>`;
+}
+function columnName(index2) {
+  let value = index2 + 1;
+  let name = "";
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    name = String.fromCharCode(65 + remainder) + name;
+    value = Math.floor((value - 1) / 26);
   }
-  if (image2.extension === "gif") {
-    return "gif";
-  }
-  return "png";
+  return name;
 }
-function createMediaManager(options, diagnostics) {
-  const entries = [];
-  return {
-    entries,
-    addImage(image2) {
-      const resolved = options.resolveImage?.(image2.url, options.sourcePath);
-      if (!resolved) {
-        diagnostics.push({
-          severity: "warning",
-          code: "skipped-image",
-          message: `Markdown image was not embedded: ${image2.url}`,
-          ...options.sourcePath ? { source: options.sourcePath } : {}
-        });
-        return void 0;
-      }
-      const extension2 = normalizeImageExtension(resolved);
-      const fileName = `image${entries.length + 1}.${extension2}`;
-      const packagePath = `ppt/media/${fileName}`;
-      entries.push({ path: packagePath, data: resolved.bytes });
-      return {
-        target: `../media/${fileName}`,
-        packagePath,
-        extension: extension2
-      };
-    }
-  };
+function drawingXml(drawing) {
+  const anchors = drawing.images.map((image2, imageIndex) => {
+    const row = image2.rowIndex;
+    const col = 1;
+    return `<xdr:twoCellAnchor editAs="oneCell">
+<xdr:from><xdr:col>${col}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${row}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>
+<xdr:to><xdr:col>${col + IMAGE_PREVIEW_COLUMNS}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${row + image2.previewRows}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+<xdr:pic>
+<xdr:nvPicPr><xdr:cNvPr id="${imageIndex + 1}" name="${xml(image2.alt || image2.path)}"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>
+<xdr:blipFill><a:blip r:embed="${image2.relationshipId}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>
+<xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>
+</xdr:pic>
+<xdr:clientData/>
+</xdr:twoCellAnchor>`;
+  }).join("");
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+${anchors}
+</xdr:wsDr>`;
 }
-var PRESENTATION_NS = "http://schemas.openxmlformats.org/presentationml/2006/main";
-var REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-var DRAWING_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
-function xmlEscape(value) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-function createHyperlinkRel(relationships, href) {
-  const existing = relationships.find((rel) => rel.target === href && rel.type.endsWith("/hyperlink"));
-  if (existing) {
-    return existing.id;
-  }
-  const id = `rId${relationships.length + 1}`;
-  relationships.push({
-    id,
-    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-    target: href,
-    targetMode: "External"
-  });
-  return id;
-}
-function createImageRel(relationships, target) {
-  const id = `rId${relationships.length + 1}`;
-  relationships.push({
-    id,
-    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-    target
-  });
-  return id;
-}
-function relsXml(relationships) {
+function drawingRelsXml(drawing) {
+  const relationships = drawing.images.map((image2) => `<Relationship Id="${image2.relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${image2.mediaPath}"/>`).join("");
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-${relationships.map((rel) => `  <Relationship Id="${rel.id}" Type="${rel.type}" Target="${xmlEscape(rel.target)}"${rel.targetMode ? ` TargetMode="${rel.targetMode}"` : ""}/>`).join("\n")}
+${relationships}
 </Relationships>`;
 }
-function slideMasterXml() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sldMaster xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}">
-  <p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
-  <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
-  <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>
-  <p:txStyles>
-    <p:titleStyle><a:lvl1pPr algn="l"><a:defRPr sz="3200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mj-lt"/></a:defRPr></a:lvl1pPr></p:titleStyle>
-    <p:bodyStyle><a:lvl1pPr marL="342900" indent="-342900"><a:defRPr sz="1800"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl1pPr><a:lvl2pPr marL="742950" indent="-285750"><a:defRPr sz="1600"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl2pPr></p:bodyStyle>
-    <p:otherStyle><a:lvl1pPr><a:defRPr sz="1800"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl1pPr></p:otherStyle>
-  </p:txStyles>
-</p:sldMaster>`;
+function readUint16Be(data, offset) {
+  return (data[offset] ?? 0) << 8 | (data[offset + 1] ?? 0);
 }
-function slideLayoutXml() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sldLayout xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}" type="blank" preserve="1">
-  <p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
-  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-</p:sldLayout>`;
+function readUint16Le(data, offset) {
+  return (data[offset] ?? 0) | (data[offset + 1] ?? 0) << 8;
 }
-function notesMasterXml() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:notesMaster xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}">
-  <p:cSld>
-    <p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>
-    <p:spTree>
-      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="2" name="Slide image placeholder"/><p:cNvSpPr><a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldImg" idx="1"/></p:nvPr></p:nvSpPr>
-        <p:spPr><a:xfrm><a:off x="685800" y="1143000"/><a:ext cx="5486400" cy="3086100"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln w="12700"><a:solidFill><a:prstClr val="black"/></a:solidFill></a:ln></p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody>
-      </p:sp>
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="3" name="Notes placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="2"/></p:nvPr></p:nvSpPr>
-        <p:spPr><a:xfrm><a:off x="685800" y="4400550"/><a:ext cx="5486400" cy="3600450"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody>
-      </p:sp>
-    </p:spTree>
-  </p:cSld>
-  <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
-  <p:notesStyle><a:lvl1pPr algn="l"><a:defRPr sz="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/></a:defRPr></a:lvl1pPr></p:notesStyle>
-</p:notesMaster>`;
+function readUint32Be(data, offset) {
+  return ((data[offset] ?? 0) << 24 | (data[offset + 1] ?? 0) << 16 | (data[offset + 2] ?? 0) << 8 | (data[offset + 3] ?? 0)) >>> 0;
 }
-function notesSlideRelsXml(slideIndex) {
-  return relsXml([
-    { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster", target: "../notesMasters/notesMaster1.xml" },
-    { id: "rId2", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide", target: `../slides/slide${slideIndex}.xml` }
-  ]);
-}
-function themeXml() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<a:theme xmlns:a="${DRAWING_NS}" name="miku-md2pptx">
-  <a:themeElements>
-    <a:clrScheme name="Office"><a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F2937"/></a:dk2><a:lt2><a:srgbClr val="F8FAFC"/></a:lt2><a:accent1><a:srgbClr val="2563EB"/></a:accent1><a:accent2><a:srgbClr val="059669"/></a:accent2><a:accent3><a:srgbClr val="DC2626"/></a:accent3><a:accent4><a:srgbClr val="7C3AED"/></a:accent4><a:accent5><a:srgbClr val="EA580C"/></a:accent5><a:accent6><a:srgbClr val="0891B2"/></a:accent6><a:hlink><a:srgbClr val="2563EB"/></a:hlink><a:folHlink><a:srgbClr val="7C3AED"/></a:folHlink></a:clrScheme>
-    <a:fontScheme name="Office"><a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Aptos"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme>
-    <a:fmtScheme name="Office">
-      <a:fillStyleLst>
-        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
-        <a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:lumMod val="110000"/><a:satMod val="105000"/><a:tint val="67000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:lumMod val="105000"/><a:satMod val="103000"/><a:tint val="73000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:lumMod val="105000"/><a:satMod val="109000"/><a:tint val="81000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="0"/></a:gradFill>
-        <a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:satMod val="103000"/><a:lumMod val="102000"/><a:tint val="94000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:satMod val="110000"/><a:lumMod val="100000"/><a:shade val="100000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:lumMod val="99000"/><a:satMod val="120000"/><a:shade val="78000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="0"/></a:gradFill>
-      </a:fillStyleLst>
-      <a:lnStyleLst>
-        <a:ln w="6350" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln>
-        <a:ln w="12700" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln>
-        <a:ln w="19050" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:prstDash val="solid"/><a:miter lim="800000"/></a:ln>
-      </a:lnStyleLst>
-      <a:effectStyleLst>
-        <a:effectStyle><a:effectLst/></a:effectStyle>
-        <a:effectStyle><a:effectLst/></a:effectStyle>
-        <a:effectStyle><a:effectLst/></a:effectStyle>
-      </a:effectStyleLst>
-      <a:bgFillStyleLst>
-        <a:solidFill><a:schemeClr val="phClr"/></a:solidFill>
-        <a:solidFill><a:schemeClr val="phClr"><a:tint val="95000"/><a:satMod val="170000"/></a:schemeClr></a:solidFill>
-        <a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="93000"/><a:satMod val="150000"/><a:shade val="98000"/><a:lumMod val="102000"/></a:schemeClr></a:gs><a:gs pos="50000"><a:schemeClr val="phClr"><a:tint val="98000"/><a:satMod val="130000"/><a:shade val="90000"/><a:lumMod val="103000"/></a:schemeClr></a:gs><a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="63000"/><a:satMod val="120000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="5400000" scaled="0"/></a:gradFill>
-      </a:bgFillStyleLst>
-    </a:fmtScheme>
-  </a:themeElements>
-</a:theme>`;
-}
-function presPropsXml() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:presentationPr xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}"/>`;
-}
-function viewPropsXml() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:viewPr xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}"><p:normalViewPr><p:restoredLeft sz="15611"/><p:restoredTop sz="94643"/></p:normalViewPr><p:slideViewPr><p:cSldViewPr snapToGrid="0"><p:cViewPr varScale="1"><p:scale><a:sx n="100" d="100"/><a:sy n="100" d="100"/></p:scale><p:origin x="0" y="0"/></p:cViewPr><p:guideLst/></p:cSldViewPr></p:slideViewPr><p:notesTextViewPr><p:cViewPr><p:scale><a:sx n="1" d="1"/><a:sy n="1" d="1"/></p:scale><p:origin x="0" y="0"/></p:cViewPr></p:notesTextViewPr><p:gridSpacing cx="72008" cy="72008"/></p:viewPr>`;
-}
-function tableStylesXml() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<a:tblStyleLst xmlns:a="${DRAWING_NS}" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`;
-}
-function parseListRuns(runs) {
-  const text5 = runs.map((run) => run.text).join("");
-  const match = text5.match(/^(\s*)-\s+(.*)$/);
-  if (!match) {
-    return { runs, bullet: false, level: 0 };
+function pngSize(data) {
+  if (data.length < 24 || data[0] !== 137 || data[1] !== 80 || data[2] !== 78 || data[3] !== 71) {
+    return void 0;
   }
-  const prefixLength = match[1].length + 2;
-  let remainingPrefix = prefixLength;
-  const trimmedRuns = [];
-  for (const run of runs) {
-    if (remainingPrefix >= run.text.length) {
-      remainingPrefix -= run.text.length;
+  return { width: readUint32Be(data, 16), height: readUint32Be(data, 20) };
+}
+function gifSize(data) {
+  if (data.length < 10 || data[0] !== 71 || data[1] !== 73 || data[2] !== 70) {
+    return void 0;
+  }
+  return { width: readUint16Le(data, 6), height: readUint16Le(data, 8) };
+}
+function jpegSize(data) {
+  if (data.length < 4 || data[0] !== 255 || data[1] !== 216) {
+    return void 0;
+  }
+  let offset = 2;
+  while (offset + 9 < data.length) {
+    if (data[offset] !== 255) {
+      offset += 1;
       continue;
     }
-    const textPart = remainingPrefix > 0 ? run.text.slice(remainingPrefix) : run.text;
-    remainingPrefix = 0;
-    trimmedRuns.push(run.href ? { text: textPart, href: run.href } : { text: textPart });
+    const marker = data[offset + 1] ?? 0;
+    const length = readUint16Be(data, offset + 2);
+    if (length < 2 || offset + 2 + length > data.length) {
+      return void 0;
+    }
+    if (marker >= 192 && marker <= 195 || marker >= 197 && marker <= 199 || marker >= 201 && marker <= 203 || marker >= 205 && marker <= 207) {
+      return { width: readUint16Be(data, offset + 7), height: readUint16Be(data, offset + 5) };
+    }
+    offset += 2 + length;
+  }
+  return void 0;
+}
+function imageSize(data) {
+  return pngSize(data) ?? gifSize(data) ?? jpegSize(data);
+}
+var PREVIEW_COLUMN_PIXELS = 64;
+var PREVIEW_ROW_PIXELS = 20;
+var MIN_IMAGE_PREVIEW_ROWS = 4;
+var MAX_IMAGE_PREVIEW_ROWS = 24;
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+function imagePreviewRows(asset) {
+  const size = imageSize(asset.data);
+  if (!size?.width || !size.height) {
+    return IMAGE_PREVIEW_ROWS;
+  }
+  const previewWidthPixels = IMAGE_PREVIEW_COLUMNS * PREVIEW_COLUMN_PIXELS;
+  const aspectRatio = size.width / size.height;
+  const previewHeightPixels = previewWidthPixels / aspectRatio;
+  return clamp(Math.ceil(previewHeightPixels / PREVIEW_ROW_PIXELS), MIN_IMAGE_PREVIEW_ROWS, MAX_IMAGE_PREVIEW_ROWS);
+}
+function imageAssetsByPath(workbook) {
+  const assets = /* @__PURE__ */ new Map();
+  for (const asset of workbook.imageAssets ?? []) {
+    assets.set(asset.path, asset);
+  }
+  return assets;
+}
+function blankPreviewRow() {
+  return { kind: "blank", cells: [{ value: "" }] };
+}
+function rowHasEmbeddableImage(row, assets) {
+  return (row.imageRefs ?? []).some((ref) => assets.has(ref.path));
+}
+function previewRowsForRow(row, assets) {
+  return Math.max(
+    IMAGE_PREVIEW_ROWS,
+    ...(row.imageRefs ?? []).map((ref) => {
+      const asset = assets.get(ref.path);
+      return asset ? imagePreviewRows(asset) : IMAGE_PREVIEW_ROWS;
+    })
+  );
+}
+function withReservedImagePreviewRows(workbook) {
+  const assets = imageAssetsByPath(workbook);
+  if (!assets.size) {
+    return workbook;
   }
   return {
-    runs: trimmedRuns,
-    bullet: true,
-    level: Math.min(8, Math.floor(match[1].length / 2))
+    ...workbook,
+    sheets: workbook.sheets.map((sheet) => ({
+      ...sheet,
+      rows: sheet.rows.flatMap((row) => rowHasEmbeddableImage(row, assets) ? [row, ...Array.from({ length: previewRowsForRow(row, assets) }, blankPreviewRow)] : [row])
+    }))
   };
 }
-function textRunXml(run, index2, relationships) {
-  const relId = run.href ? createHyperlinkRel(relationships, run.href) : void 0;
-  const hyperlink = relId ? `<a:hlinkClick r:id="${relId}"/>` : "";
-  return `<a:r><a:rPr lang="en-US" sz="${index2 === 0 ? 2400 : 1800}">${hyperlink}</a:rPr><a:t>${xmlEscape(run.text)}</a:t></a:r>`;
+function mediaExtension(asset) {
+  const fromPath = asset.path.match(/\.([a-z0-9]+)(?:[?#].*)?$/i)?.[1]?.toLowerCase();
+  if (fromPath === "jpg" || fromPath === "jpeg" || fromPath === "png" || fromPath === "gif") {
+    return fromPath;
+  }
+  switch (asset.contentType) {
+    case "image/jpeg":
+      return "jpg";
+    case "image/gif":
+      return "gif";
+    default:
+      return "png";
+  }
 }
-function textParagraphFromRuns(runs, index2, relationships) {
-  const parsed = parseListRuns(runs);
-  const pPr = parsed.bullet ? `<a:pPr${parsed.level > 0 ? ` lvl="${parsed.level}"` : ""}><a:buChar char="\u2022"/></a:pPr>` : "";
-  const body = parsed.runs.length > 0 ? parsed.runs.map((run) => textRunXml(run, index2, relationships)).join("") : textRunXml({ text: " " }, index2, relationships);
-  return `<a:p>${pPr}${body}<a:endParaRPr lang="en-US"/></a:p>`;
+function mediaContentType(extension2) {
+  switch (extension2) {
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "gif":
+      return "image/gif";
+    default:
+      return "image/png";
+  }
 }
-function textParagraph(text5, index2, relationships) {
-  return textParagraphFromRuns([{ text: text5 }], index2, relationships);
+function imageAssetsByPath2(workbook) {
+  const assets = /* @__PURE__ */ new Map();
+  for (const asset of workbook.imageAssets ?? []) {
+    assets.set(asset.path, asset);
+  }
+  return assets;
 }
-function tableXml(rows, id, relationships) {
-  const columnCount = Math.max(1, ...rows.map((row) => row.length));
-  const normalizedRows = rows.length > 0 ? rows : [[{ text: "", runs: [] }]];
-  const gridColumns = Array.from({ length: columnCount }, () => '<a:gridCol w="1828800"/>').join("");
-  const tableRowsXml = normalizedRows.map((row) => {
-    const cells = Array.from({ length: columnCount }, (_, index2) => row[index2] ?? { text: "", runs: [] });
-    return `<a:tr h="370840">${cells.map((cell) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${textParagraphFromRuns(cell.runs.length > 0 ? cell.runs : [{ text: cell.text }], 1, relationships)}</a:txBody><a:tcPr/></a:tc>`).join("")}</a:tr>`;
+function collectSheetDrawings(workbook) {
+  const assets = imageAssetsByPath2(workbook);
+  const drawings = [];
+  let drawingIndex = 1;
+  let mediaIndex = 1;
+  for (const [sheetOffset, sheet] of workbook.sheets.entries()) {
+    const images = [];
+    for (const [rowIndex, row] of sheet.rows.entries()) {
+      for (const ref of row.imageRefs ?? []) {
+        const asset = assets.get(ref.path);
+        if (!asset) {
+          continue;
+        }
+        const extension2 = mediaExtension(asset);
+        images.push({
+          alt: ref.alt,
+          path: ref.path,
+          rowIndex,
+          asset,
+          mediaPath: `image${mediaIndex}.${extension2}`,
+          relationshipId: `rId${images.length + 1}`,
+          previewRows: imagePreviewRows(asset)
+        });
+        mediaIndex += 1;
+      }
+    }
+    if (images.length) {
+      drawings.push({
+        sheetIndex: sheetOffset + 1,
+        drawingIndex,
+        relationshipId: "rId1",
+        images
+      });
+      drawingIndex += 1;
+    }
+  }
+  return drawings;
+}
+function styleIndex(role) {
+  switch (role) {
+    case "heading1":
+    case "title":
+      return 1;
+    case "heading2":
+    case "heading":
+      return 2;
+    case "heading3":
+      return 3;
+    case "heading4":
+      return 4;
+    case "heading5":
+      return 5;
+    case "heading6":
+      return 6;
+    case "tableHeader":
+      return 7;
+    case "code":
+      return 8;
+    case "separator":
+      return 9;
+    case "tableCell":
+      return 10;
+    default:
+      return 0;
+  }
+}
+function stylesXml() {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="9">
+<font><sz val="11"/><name val="Calibri"/></font>
+<font><b/><sz val="24"/><name val="Calibri"/></font>
+<font><b/><sz val="20"/><name val="Calibri"/></font>
+<font><b/><sz val="18"/><name val="Calibri"/></font>
+<font><b/><sz val="16"/><name val="Calibri"/></font>
+<font><b/><sz val="14"/><name val="Calibri"/></font>
+<font><b/><sz val="12"/><name val="Calibri"/></font>
+<font><b/><sz val="11"/><name val="Calibri"/></font>
+<font><sz val="11"/><name val="Consolas"/></font>
+</fonts>
+<fills count="4">
+<fill><patternFill patternType="none"/></fill>
+<fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFE8F0FE"/><bgColor indexed="64"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/><bgColor indexed="64"/></patternFill></fill>
+</fills>
+<borders count="3">
+<border><left/><right/><top/><bottom/><diagonal/></border>
+<border><left style="thin"><color rgb="FF9E9E9E"/></left><right style="thin"><color rgb="FF9E9E9E"/></right><top style="thin"><color rgb="FF9E9E9E"/></top><bottom style="thin"><color rgb="FF9E9E9E"/></bottom><diagonal/></border>
+<border><left/><right/><top style="thin"><color rgb="FF808080"/></top><bottom/><diagonal/></border>
+</borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="11">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="7" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="8" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1"/>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+}
+function worksheetHyperlinks(sheet, drawing) {
+  let externalIndex = drawing ? 2 : 1;
+  return sheet.rows.flatMap((row, rowIndex) => row.cells.flatMap((cell, cellIndex) => {
+    if (!cell.hyperlink) {
+      return [];
+    }
+    const ref = `${columnName(cellIndex)}${rowIndex + 1}`;
+    if (cell.hyperlink.kind === "internal") {
+      return [{ ref, link: cell.hyperlink }];
+    }
+    const relationshipId = `rId${externalIndex}`;
+    externalIndex += 1;
+    return [{ ref, link: cell.hyperlink, relationshipId }];
+  }));
+}
+function worksheetHyperlinksXml(links) {
+  return links.length ? `<hyperlinks>${links.map((link2) => link2.link.kind === "internal" ? `<hyperlink ref="${link2.ref}" location="${xml(link2.link.target)}"/>` : `<hyperlink ref="${link2.ref}" r:id="${link2.relationshipId}"/>`).join("")}</hyperlinks>` : "";
+}
+function worksheetHyperlinkRelsXml(links) {
+  return links.filter((link2) => link2.link.kind === "external").map((link2) => `<Relationship Id="${link2.relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${xml(link2.link.target)}" TargetMode="External"/>`).join("");
+}
+var LEFT_MERGE_MARKER = "[\u2190M\u2190]";
+var UP_MERGE_MARKER = "[\u2191M\u2191]";
+function cellValue(sheet, rowIndex, cellIndex) {
+  return sheet.rows[rowIndex]?.cells[cellIndex]?.value ?? "";
+}
+function isMergeMarker(value) {
+  return value === LEFT_MERGE_MARKER || value === UP_MERGE_MARKER;
+}
+function cellKey(rowIndex, cellIndex) {
+  return `${rowIndex}:${cellIndex}`;
+}
+function mergeRangeRef(range) {
+  return `${columnName(range.startCol)}${range.startRow + 1}:${columnName(range.endCol)}${range.endRow + 1}`;
+}
+function mergeRanges(sheet) {
+  const ranges = [];
+  for (const [rowIndex, row] of sheet.rows.entries()) {
+    for (const [cellIndex, cell] of row.cells.entries()) {
+      if (isMergeMarker(cell.value)) {
+        continue;
+      }
+      let endCol = cellIndex;
+      while (cellValue(sheet, rowIndex, endCol + 1) === LEFT_MERGE_MARKER) {
+        endCol += 1;
+      }
+      let endRow = rowIndex;
+      while (endRow + 1 < sheet.rows.length) {
+        const nextRowContinues = Array.from({ length: endCol - cellIndex + 1 }, (_, offset) => cellValue(sheet, endRow + 1, cellIndex + offset) === UP_MERGE_MARKER).every(Boolean);
+        if (!nextRowContinues) {
+          break;
+        }
+        endRow += 1;
+      }
+      if (endCol > cellIndex || endRow > rowIndex) {
+        ranges.push({ startRow: rowIndex, startCol: cellIndex, endRow, endCol });
+      }
+    }
+  }
+  return ranges;
+}
+function coveredMergeCells(ranges) {
+  const covered = /* @__PURE__ */ new Set();
+  for (const range of ranges) {
+    for (let row = range.startRow; row <= range.endRow; row += 1) {
+      for (let col = range.startCol; col <= range.endCol; col += 1) {
+        if (row !== range.startRow || col !== range.startCol) {
+          covered.add(cellKey(row, col));
+        }
+      }
+    }
+  }
+  return covered;
+}
+function cellInlineStringXml(cell, value) {
+  const runs = cell.richTextRuns;
+  if (!runs?.length || runs.map((run) => run.text).join("") !== value) {
+    return inlineTextXml(value);
+  }
+  return runs.map(richTextRunXml).join("");
+}
+function richTextRunXml(run) {
+  const properties = richTextRunPropertiesXml(run);
+  return `<r>${properties}${inlineTextXml(run.text)}</r>`;
+}
+function richTextRunPropertiesXml(run) {
+  const properties = [
+    run.bold ? "<b/>" : "",
+    run.italic ? "<i/>" : "",
+    run.strike ? "<strike/>" : "",
+    run.underline ? "<u/>" : ""
+  ].join("");
+  return properties ? `<rPr>${properties}</rPr>` : "";
+}
+function worksheetXml(sheet, drawing) {
+  const maxColumns = Math.max(...sheet.rows.map((row) => row.cells.length), 1);
+  const dimension = `A1:${columnName(maxColumns - 1)}${Math.max(sheet.rows.length, 1)}`;
+  const columns = (sheet.columnHints ?? []).map((width, index2) => `<col min="${index2 + 1}" max="${index2 + 1}" width="${Math.max(width, 10)}" customWidth="1"/>`).join("");
+  const merges = mergeRanges(sheet);
+  const coveredCells = coveredMergeCells(merges);
+  const links = worksheetHyperlinks(sheet, drawing);
+  const rows = sheet.rows.map((row, rowIndex) => {
+    const cells = row.cells.map((cell, cellIndex) => {
+      const ref = `${columnName(cellIndex)}${rowIndex + 1}`;
+      const style = styleIndex(cell.styleRole);
+      const value = coveredCells.has(cellKey(rowIndex, cellIndex)) || isMergeMarker(cell.value) ? "" : cell.value;
+      return `<c r="${ref}" t="inlineStr" s="${style}"><is>${cellInlineStringXml(cell, value)}</is></c>`;
+    }).join("");
+    return `<row r="${rowIndex + 1}">${cells}</row>`;
   }).join("");
-  return `<p:graphicFrame>
-        <p:nvGraphicFramePr><p:cNvPr id="${id}" name="Table ${id}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
-        <p:xfrm><a:off x="685800" y="2743200"/><a:ext cx="7772400" cy="1828800"/></p:xfrm>
-        <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${gridColumns}</a:tblGrid>${tableRowsXml}</a:tbl></a:graphicData></a:graphic>
-      </p:graphicFrame>`;
-}
-function pictureXml(image2, id, relId) {
-  const name = image2.altText || image2.url || `Image ${id}`;
-  const descr = image2.altText || image2.url || "";
-  return `<p:pic>
-        <p:nvPicPr><p:cNvPr id="${id}" name="${xmlEscape(name)}" descr="${xmlEscape(descr)}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
-        <p:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>
-        <p:spPr><a:xfrm><a:off x="685800" y="3886200"/><a:ext cx="2743200" cy="1828800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
-      </p:pic>`;
-}
-function notesXml(slide) {
-  const relationships = [];
-  const noteParagraphs = slide.notes.map((runs, index2) => textParagraphFromRuns(runs, index2 + 1, relationships)).join("");
+  const mergeCells = merges.length ? `<mergeCells count="${merges.length}">${merges.map((range) => `<mergeCell ref="${mergeRangeRef(range)}"/>`).join("")}</mergeCells>` : "";
+  const hyperlinks = worksheetHyperlinksXml(links);
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:notes xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}">
-  <p:cSld>
-    <p:spTree>
-      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="2" name="Slide image placeholder"/><p:cNvSpPr><a:spLocks noGrp="1" noRot="1" noChangeAspect="1"/></p:cNvSpPr><p:nvPr><p:ph type="sldImg"/></p:nvPr></p:nvSpPr>
-        <p:spPr/>
-      </p:sp>
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="3" name="Notes placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body" idx="1"/></p:nvPr></p:nvSpPr>
-        <p:spPr/>
-        <p:txBody><a:bodyPr/><a:lstStyle/>${noteParagraphs}</p:txBody>
-      </p:sp>
-    </p:spTree>
-  </p:cSld>
-  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-</p:notes>`;
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<dimension ref="${dimension}"/>
+<sheetViews><sheetView workbookViewId="0"/></sheetViews>
+<sheetFormatPr defaultRowHeight="15"/>
+<cols>${columns}</cols>
+<sheetData>${rows}</sheetData>
+${mergeCells}
+${hyperlinks}
+${drawing ? `<drawing r:id="${drawing.relationshipId}"/>` : ""}
+</worksheet>`;
 }
-function slideXml(slide, index2, media) {
-  const relationships = [{
-    id: "rId1",
-    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-    target: "../slideLayouts/slideLayout1.xml"
-  }];
-  const textBlocks = slide.blocks.filter((block) => block.kind === "text");
-  const tableBlocks = slide.blocks.filter((block) => block.kind === "table");
-  const imageBlocks = slide.blocks.filter((block) => block.kind === "image");
-  const bodyBlocks = textBlocks.length > 0 ? textBlocks : [{ kind: "text", text: " ", runs: [{ text: " " }] }];
-  if (slide.notes.length > 0) {
-    relationships.push({
-      id: `rId${relationships.length + 1}`,
-      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
-      target: `../notesSlides/notesSlide${index2}.xml`
-    });
-  }
-  const imageXml = imageBlocks.map((image2, imageIndex) => {
-    const added = media.addImage(image2);
-    if (!added) {
-      return "";
+function hasWorksheetRelationships(sheet, drawing) {
+  return Boolean(drawing) || worksheetHyperlinks(sheet, drawing).some((link2) => link2.link.kind === "external");
+}
+function worksheetRelsXml(sheet, drawing) {
+  const drawingRelationship = drawing ? `<Relationship Id="${drawing.relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${drawing.drawingIndex}.xml"/>` : "";
+  const hyperlinkRelationships = worksheetHyperlinkRelsXml(worksheetHyperlinks(sheet, drawing));
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+${drawingRelationship}
+${hyperlinkRelationships}
+</Relationships>`;
+}
+function contentTypes(sheetCount, drawings) {
+  const imageExtensions = Array.from(new Set(drawings.flatMap((drawing) => drawing.images.map((image2) => mediaExtension(image2.asset)))));
+  return buildOpcContentTypesXml({
+    defaults: [
+      {
+        extension: "rels",
+        contentType: "application/vnd.openxmlformats-package.relationships+xml"
+      },
+      { extension: "xml", contentType: "application/xml" },
+      ...imageExtensions.map((extension2) => ({
+        extension: extension2,
+        contentType: mediaContentType(extension2)
+      }))
+    ],
+    overrides: [
+      {
+        partName: "xl/workbook.xml",
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"
+      },
+      {
+        partName: "xl/styles.xml",
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
+      },
+      { partName: "docProps/core.xml", contentType: "application/vnd.openxmlformats-package.core-properties+xml" },
+      { partName: "docProps/app.xml", contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml" },
+      ...Array.from({ length: sheetCount }, (_unused, index2) => ({
+        partName: `xl/worksheets/sheet${index2 + 1}.xml`,
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"
+      })),
+      ...drawings.map((drawing) => ({
+        partName: `xl/drawings/drawing${drawing.drawingIndex}.xml`,
+        contentType: "application/vnd.openxmlformats-officedocument.drawing+xml"
+      }))
+    ]
+  });
+}
+function rootRels() {
+  return buildOpcRelationshipsXml([
+    {
+      id: "rId1",
+      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+      target: "xl/workbook.xml"
+    },
+    {
+      id: "rId2",
+      type: "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+      target: "docProps/core.xml"
+    },
+    {
+      id: "rId3",
+      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+      target: "docProps/app.xml"
     }
-    const relId = createImageRel(relationships, added.target);
-    return pictureXml(image2, 40 + imageIndex, relId);
-  }).join("\n");
-  const xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sld xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}">
-  <p:cSld>
-    <p:spTree>
-      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="2" name="Title ${index2}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>
-        <p:spPr><a:xfrm><a:off x="685800" y="457200"/><a:ext cx="7772400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/>${textParagraph(slide.title, 0, relationships)}</p:txBody>
-      </p:sp>
-      <p:sp>
-        <p:nvSpPr><p:cNvPr id="3" name="Body ${index2}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body"/></p:nvPr></p:nvSpPr>
-        <p:spPr><a:xfrm><a:off x="685800" y="1600200"/><a:ext cx="7772400" cy="4572000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
-        <p:txBody><a:bodyPr wrap="square"/><a:lstStyle/>${bodyBlocks.map((block, lineIndex) => textParagraphFromRuns(block.runs, lineIndex + 1, relationships)).join("")}</p:txBody>
-      </p:sp>
-      ${tableBlocks.map((block, tableIndex) => tableXml(block.rows, 4 + tableIndex, relationships)).join("\n")}
-      ${imageXml}
-    </p:spTree>
-  </p:cSld>
-  <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
-</p:sld>`;
-  return { xml, relationships };
+  ]);
 }
-function presentationXml(slides) {
-  const hasNotes = slides.some((slide) => slide.notes.length > 0);
-  const notesMasterRelId = `rId${slides.length + 2}`;
-  const defaultTextStyle = `<p:defaultTextStyle><a:defPPr><a:defRPr lang="en-US"/></a:defPPr><a:lvl1pPr marL="0" algn="l" defTabSz="914400" rtl="0" eaLnBrk="1" latinLnBrk="0" hangingPunct="1"><a:defRPr sz="1800" kern="1200"><a:solidFill><a:schemeClr val="tx1"/></a:solidFill><a:latin typeface="+mn-lt"/><a:ea typeface="+mn-ea"/><a:cs typeface="+mn-cs"/></a:defRPr></a:lvl1pPr></p:defaultTextStyle>`;
+function workbookXml(sheets) {
+  const sheetXml = sheets.map((sheet, index2) => `<sheet name="${xml(sheet.name)}" sheetId="${index2 + 1}" r:id="rId${index2 + 1}"/>`).join("");
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:presentation xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}">
-  <p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>
-  ${hasNotes ? `<p:notesMasterIdLst><p:notesMasterId r:id="${notesMasterRelId}"/></p:notesMasterIdLst>` : ""}
-  <p:sldIdLst>
-${slides.map((_, index2) => `    <p:sldId id="${256 + index2}" r:id="rId${index2 + 2}"/>`).join("\n")}
-  </p:sldIdLst>
-  <p:sldSz cx="9144000" cy="6858000" type="screen4x3"/>
-  <p:notesSz cx="6858000" cy="9144000"/>
-  ${defaultTextStyle}
-</p:presentation>`;
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets>${sheetXml}</sheets>
+</workbook>`;
 }
-function contentTypes(slides) {
-  const slideOverrides = Array.from(
-    { length: slides.length },
-    (_, index2) => `  <Override PartName="/ppt/slides/slide${index2 + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`
-  ).join("\n");
-  const notesOverrides = slides.map((slide, index2) => slide.notes.length > 0 ? `  <Override PartName="/ppt/notesSlides/notesSlide${index2 + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>` : "").filter(Boolean).join("\n");
-  const notesMasterOverride = slides.some((slide) => slide.notes.length > 0) ? '  <Override PartName="/ppt/notesMasters/notesMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"/>' : "";
-  const notesSupportOverrides = slides.some((slide) => slide.notes.length > 0) ? [
-    '  <Override PartName="/ppt/theme/theme2.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>',
-    '  <Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/>',
-    '  <Override PartName="/ppt/viewProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"/>',
-    '  <Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/>'
-  ].join("\n") : "";
+function workbookRels(sheetCount) {
+  return buildOpcRelationshipsXml([
+    ...Array.from({ length: sheetCount }, (_unused, index2) => ({
+      id: `rId${index2 + 1}`,
+      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet",
+      target: `worksheets/sheet${index2 + 1}.xml`
+    })),
+    {
+      id: `rId${sheetCount + 1}`,
+      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+      target: "styles.xml"
+    }
+  ]);
+}
+function coreProps() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
-  <Default Extension="png" ContentType="image/png"/>
-  <Default Extension="jpg" ContentType="image/jpeg"/>
-  <Default Extension="jpeg" ContentType="image/jpeg"/>
-  <Default Extension="gif" ContentType="image/gif"/>
-  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
-  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
-  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
-  <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
-  <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
-  <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
-${slideOverrides}
-${notesOverrides}
-${notesMasterOverride}
-${notesSupportOverrides}
-</Types>`;
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<dc:creator>miku-md2xlsx</dc:creator>
+<cp:lastModifiedBy>miku-md2xlsx</cp:lastModifiedBy>
+</cp:coreProperties>`;
 }
-function markdownToPptxResult(markdown, options = {}) {
-  const slides = markdownToSlides(markdown, options);
-  const diagnostics = collectDiagnostics(slides, options);
-  const media = createMediaManager(options, diagnostics);
-  const hasNotes = slides.some((slide) => slide.notes.length > 0);
+function appProps(sheetCount) {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+<Application>miku-md2xlsx</Application>
+<DocSecurity>0</DocSecurity>
+<ScaleCrop>false</ScaleCrop>
+<HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${sheetCount}</vt:i4></vt:variant></vt:vector></HeadingPairs>
+</Properties>`;
+}
+function writeXlsx(workbook) {
+  const renderWorkbook = withReservedImagePreviewRows(workbook);
+  const drawings = collectSheetDrawings(renderWorkbook);
+  const drawingsBySheet = new Map(drawings.map((drawing) => [drawing.sheetIndex, drawing]));
   const entries = [
-    { path: "[Content_Types].xml", data: contentTypes(slides) },
-    { path: "_rels/.rels", data: relsXml([
-      { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", target: "ppt/presentation.xml" },
-      { id: "rId2", type: "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties", target: "docProps/core.xml" },
-      { id: "rId3", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", target: "docProps/app.xml" }
-    ]) },
-    { path: "docProps/app.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>miku-md2pptx</Application><Slides>${slides.length}</Slides></Properties>` },
-    { path: "docProps/core.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${xmlEscape(options.title ?? slides[0]?.title ?? "Markdown deck")}</dc:title><dc:creator>miku-md2pptx</dc:creator></cp:coreProperties>` },
-    { path: "ppt/presentation.xml", data: presentationXml(slides) },
-    { path: "ppt/_rels/presentation.xml.rels", data: relsXml([
-      { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster", target: "slideMasters/slideMaster1.xml" },
-      ...slides.map((_, index2) => ({ id: `rId${index2 + 2}`, type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide", target: `slides/slide${index2 + 1}.xml` })),
-      ...hasNotes ? [
-        { id: `rId${slides.length + 2}`, type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster", target: "notesMasters/notesMaster1.xml" },
-        { id: `rId${slides.length + 3}`, type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps", target: "presProps.xml" },
-        { id: `rId${slides.length + 4}`, type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps", target: "viewProps.xml" },
-        { id: `rId${slides.length + 5}`, type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", target: "theme/theme1.xml" },
-        { id: `rId${slides.length + 6}`, type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles", target: "tableStyles.xml" }
-      ] : []
-    ]) },
-    { path: "ppt/slideMasters/slideMaster1.xml", data: slideMasterXml() },
-    { path: "ppt/slideMasters/_rels/slideMaster1.xml.rels", data: relsXml([
-      { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout", target: "../slideLayouts/slideLayout1.xml" },
-      { id: "rId2", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", target: "../theme/theme1.xml" }
-    ]) },
-    { path: "ppt/slideLayouts/slideLayout1.xml", data: slideLayoutXml() },
-    { path: "ppt/slideLayouts/_rels/slideLayout1.xml.rels", data: relsXml([
-      { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster", target: "../slideMasters/slideMaster1.xml" }
-    ]) },
-    { path: "ppt/theme/theme1.xml", data: themeXml() }
+    { path: "[Content_Types].xml", data: contentTypes(renderWorkbook.sheets.length, drawings) },
+    { path: "_rels/.rels", data: rootRels() },
+    { path: "xl/workbook.xml", data: workbookXml(renderWorkbook.sheets) },
+    { path: "xl/_rels/workbook.xml.rels", data: workbookRels(renderWorkbook.sheets.length) },
+    { path: "xl/styles.xml", data: stylesXml() },
+    { path: "docProps/core.xml", data: coreProps() },
+    { path: "docProps/app.xml", data: appProps(renderWorkbook.sheets.length) },
+    ...renderWorkbook.sheets.map((sheet, index2) => ({
+      path: `xl/worksheets/sheet${index2 + 1}.xml`,
+      data: worksheetXml(sheet, drawingsBySheet.get(index2 + 1))
+    })),
+    ...renderWorkbook.sheets.flatMap((sheet, index2) => {
+      const drawing = drawingsBySheet.get(index2 + 1);
+      return hasWorksheetRelationships(sheet, drawing) ? [{
+        path: `xl/worksheets/_rels/sheet${index2 + 1}.xml.rels`,
+        data: worksheetRelsXml(sheet, drawing)
+      }] : [];
+    }),
+    ...drawings.map((drawing) => ({
+      path: `xl/drawings/drawing${drawing.drawingIndex}.xml`,
+      data: drawingXml(drawing)
+    })),
+    ...drawings.map((drawing) => ({
+      path: `xl/drawings/_rels/drawing${drawing.drawingIndex}.xml.rels`,
+      data: drawingRelsXml(drawing)
+    })),
+    ...drawings.flatMap((drawing) => drawing.images.map((image2) => ({
+      path: `xl/media/${image2.mediaPath}`,
+      data: image2.asset.data
+    })))
   ];
-  for (const [index2, slide] of slides.entries()) {
-    const slidePart = slideXml(slide, index2 + 1, media);
-    entries.push({ path: `ppt/slides/slide${index2 + 1}.xml`, data: slidePart.xml });
-    entries.push({ path: `ppt/slides/_rels/slide${index2 + 1}.xml.rels`, data: relsXml(slidePart.relationships) });
-    if (slide.notes.length > 0) {
-      entries.push({ path: `ppt/notesSlides/notesSlide${index2 + 1}.xml`, data: notesXml(slide) });
-      entries.push({ path: `ppt/notesSlides/_rels/notesSlide${index2 + 1}.xml.rels`, data: notesSlideRelsXml(index2 + 1) });
-    }
-  }
-  if (hasNotes) {
-    entries.push({ path: "ppt/notesMasters/notesMaster1.xml", data: notesMasterXml() });
-    entries.push({ path: "ppt/notesMasters/_rels/notesMaster1.xml.rels", data: relsXml([
-      { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", target: "../theme/theme2.xml" }
-    ]) });
-    entries.push({ path: "ppt/theme/theme2.xml", data: themeXml() });
-    entries.push({ path: "ppt/presProps.xml", data: presPropsXml() });
-    entries.push({ path: "ppt/viewProps.xml", data: viewPropsXml() });
-    entries.push({ path: "ppt/tableStyles.xml", data: tableStylesXml() });
-  }
-  for (const entry of media.entries) {
-    entries.push(entry);
-  }
-  return {
-    pptx: createZip(entries),
-    diagnostics
-  };
+  return writeZipPackage(entries);
+}
+function markdownToXlsxModel(markdown, options = {}) {
+  return markdownToWorkbook(markdown, options);
+}
+function workbookModelToXlsx(workbook) {
+  return writeXlsx(workbook);
+}
+function md2xlsx(markdown, options = {}) {
+  return workbookModelToXlsx(markdownToXlsxModel(markdown, options));
 }
 
 // package.json
 var package_default = {
-  name: "miku-md2pptx",
-  version: "0.2.1",
+  name: "miku-md2xlsx",
+  version: "0.6.6",
   private: true,
   type: "module",
   scripts: {
     test: "npm run build --silent && vitest run",
     "test:unit": "npm run build --silent && vitest run",
+    "test:semantic-roundtrip": "npm run build --silent && node tests/semantic-roundtrip.mjs",
     "test:watch": "vitest",
-    cli: "npm run build --silent && node scripts/miku-md2pptx-cli.mjs",
-    "smoke:version": "npm run build --silent && node scripts/miku-md2pptx-cli.mjs --version",
+    cli: "npm run build --silent && node scripts/miku-md2xlsx-cli.mjs",
+    "smoke:version": "npm run build --silent && node scripts/miku-md2xlsx-cli.mjs --version",
     "smoke:bundle": "node scripts/smoke-cli-bundle.mjs",
-    build: "node scripts/build-miku-md2pptx.mjs",
+    "smoke:runtime": "node scripts/smoke-runtime-bundle.mjs",
+    "fixtures:from-xlsx2md": "node scripts/regenerate-xlsx2md-fixtures.mjs",
+    build: "node scripts/build-miku-md2xlsx.mjs",
     "build:bundle": "node scripts/build-cli-bundle.mjs",
     "build:all": "npm run build && npm run build:bundle"
   },
@@ -12202,126 +12796,204 @@ var package_default = {
 };
 
 // scripts/lib/cli-support.mjs
-var __filename = fileURLToPath2(import.meta.url);
-var __dirname = path2.dirname(__filename);
-var rootDir = path2.resolve(__dirname, "../..");
-function usage() {
-  return `miku-md2pptx converts a Markdown file into a PowerPoint .pptx deck.
+var usage = `miku-md2xlsx converts a Markdown file into an Excel .xlsx workbook.
+It is a local file converter: the input Markdown is read from disk and the
+generated workbook is written to the --out path.
 
 Usage:
-  miku-md2pptx <input.md> --out <output.pptx>
-  miku-md2pptx --help
-  miku-md2pptx --version
+  npm run cli -- <input.md> --out <output.xlsx> [options]
+  node bundle/miku-md2xlsx.mjs <input.md> --out <output.xlsx> [options]
+  npm run cli -- --version
+  npm run cli -- --help
+
+Default behavior:
+  The input file is read as UTF-8 Markdown. The output workbook is written to
+  --out. Parent directories for --out are created when missing.
+
+Inputs:
+  <input.md>                Input Markdown file path
+
+Outputs:
+  --out <file> is the generated Excel .xlsx workbook. Terminal stdout is only
+  used for --help and --version; conversion progress is not a machine-readable
+  output contract.
+
+Generated artifacts:
+  The generated workbook is safe to regenerate from the Markdown input and CLI
+  options. Build commands may also generate dist/ and bundle/ artifacts.
+
+Overwrite behavior:
+  Existing --out files are overwritten.
+
+Diagnostics / warnings:
+  CLI usage errors and unexpected runtime errors are written to stderr. Missing,
+  remote, and absolute image paths remain visible as workbook text references.
+
+Exit codes:
+  0  success, --help, or --version
+  1  conversion or file-system failure
+  2  invalid CLI usage
 
 Options:
-  --out <path>       Output .pptx path.
-  --title <text>     Override the generated presentation title.
-  --help             Show this help.
-  --version          Show the package version.
-
-Markdown handling notes:
-  Heading level 1 and 2 blocks start new slides.
-  Paragraphs, lists, code blocks, and tables become simple editable slide text.
-  The first implementation prioritizes structure and local generation over
-  pixel-perfect PowerPoint layout.
+  --out <file>              Output .xlsx path
+  --sheet-mode <mode>       single or heading (default: single)
+  --sheet-heading-depth <n> Heading depth for sheet splits: 1 or 2 (default: 1)
+  --title <value>           Workbook title or first sheet name
+  --table-style <mode>      plain or bordered (default: bordered)
+  --no-header-row           Do not style first Markdown table row as a header
+  --help                    Show this help
+  --version                 Show version
 
 Examples:
-  npm run cli -- ./sample.md --out ./sample.pptx
-  npm run cli -- ./sample.md --out ./sample.pptx --title "Project brief"
+  npm run cli -- ./sample.md --out ./sample.xlsx
+  npm run cli -- ./sample.md --out ./sample.xlsx --sheet-mode heading
+  npm run cli -- ./book.md --out ./book.xlsx --sheet-mode heading --sheet-heading-depth 2
+
+Markdown handling notes:
+  - Headings, paragraphs, lists, tables, code blocks, horizontal rules, links,
+    common inline styles, and local PNG/JPEG/GIF image references are supported.
+  - Table cell values are written as strings. Numeric-looking and date-like
+    Markdown text is not inferred as Excel numbers or dates.
+  - Relative local image references are embedded best-effort when the asset file
+    exists next to the input Markdown. Missing, remote, and absolute image paths
+    remain visible as text references.
+  - miku-xlsx2md merge markers in table cells are treated as Excel merges:
+    [\u2190M\u2190] extends a merge to the left, and [\u2191M\u2191] extends a merge upward.
+  - A cell containing a single Markdown link is emitted as an Excel hyperlink
+    when the target can be represented by Excel.
+
+Sheet mode notes:
+  - single: create one worksheet from the whole Markdown document.
+  - heading: split worksheets at headings matching --sheet-heading-depth.
+  - Use --sheet-heading-depth 2 for miku-xlsx2md-style Markdown where # is the
+    workbook title and ## headings are worksheet names.
 `;
+var CliUsageError = class extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "CliUsageError";
+    this.exitCode = 2;
+  }
+};
+function readOption(args, index2, name) {
+  const value = args[index2 + 1];
+  if (!value || value.startsWith("--")) {
+    throw new CliUsageError(`${name} requires a value.`);
+  }
+  return value;
 }
-function parseArgs(args) {
-  const options = { input: void 0, out: void 0, title: void 0 };
-  for (let i = 0; i < args.length; i += 1) {
-    const arg = args[i];
-    if (arg === "--help" || arg === "-h") {
-      return { help: true };
-    }
-    if (arg === "--version") {
-      return { version: true };
-    }
-    if (arg === "--out") {
-      options.out = args[++i];
-      continue;
-    }
-    if (arg === "--title") {
-      options.title = args[++i];
-      continue;
-    }
-    if (arg.startsWith("--")) {
-      throw new Error(`Unknown option: ${arg}`);
-    }
-    if (options.input) {
-      throw new Error(`Unexpected argument: ${arg}`);
-    }
-    options.input = arg;
-  }
-  if (!options.input) {
-    throw new Error("Input Markdown path is required. Use --help for usage.");
-  }
-  if (!options.out) {
-    throw new Error("--out is required. Use --help for usage.");
-  }
-  return options;
+function isLocalRelativeImagePath(value) {
+  return !isAbsolute(value) && !/^[a-z][a-z0-9+.-]*:/i.test(value) && !value.startsWith("//");
 }
-function resolveLocalImage(url, sourcePath) {
-  if (!sourcePath || /^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(url)) {
-    return void 0;
+function contentTypeForPath(value) {
+  const lower = value.toLowerCase();
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+    return "image/jpeg";
   }
-  const cleanUrl = url.split("#")[0].split("?")[0];
-  const extension2 = path2.extname(cleanUrl).slice(1).toLowerCase();
-  if (!["png", "jpg", "jpeg", "gif"].includes(extension2)) {
-    return void 0;
+  if (lower.endsWith(".gif")) {
+    return "image/gif";
   }
-  try {
-    const imagePath = path2.resolve(path2.dirname(sourcePath), decodeURIComponent(cleanUrl));
-    const sourceDir = path2.resolve(path2.dirname(sourcePath));
-    const relative = path2.relative(sourceDir, imagePath);
-    if (relative.startsWith("..") || path2.isAbsolute(relative)) {
-      return void 0;
+  return "image/png";
+}
+function readSheetHeadingDepth(value) {
+  if (value !== "1" && value !== "2") {
+    throw new CliUsageError("--sheet-heading-depth must be 1 or 2.");
+  }
+  return Number(value);
+}
+function readSheetMode(value) {
+  if (value !== "single" && value !== "heading") {
+    throw new CliUsageError("--sheet-mode must be single or heading.");
+  }
+  return value;
+}
+function readTableStyle(value) {
+  if (value !== "plain" && value !== "bordered") {
+    throw new CliUsageError("--table-style must be plain or bordered.");
+  }
+  return value;
+}
+async function collectImageAssets(markdown, inputPath) {
+  const inputDir = dirname(resolve(inputPath));
+  const model = markdownToXlsxModel(markdown);
+  const paths = model.sheets.flatMap((sheet) => sheet.rows.flatMap((row) => (row.imageRefs ?? []).map((ref) => ref.path)));
+  const uniquePaths = Array.from(new Set(paths)).filter(isLocalRelativeImagePath);
+  const assets = [];
+  for (const imagePath of uniquePaths) {
+    try {
+      assets.push({
+        path: imagePath,
+        data: await readFile(resolve(inputDir, imagePath)),
+        contentType: contentTypeForPath(imagePath)
+      });
+    } catch {
     }
-    return {
-      bytes: readFileSync(imagePath),
-      extension: extension2
-    };
-  } catch {
-    return void 0;
   }
+  return assets;
 }
 async function main(args) {
-  const options = parseArgs(args);
-  if (options.help) {
-    process.stdout.write(usage());
+  if (args.includes("--help") || args.length === 0) {
+    process.stdout.write(usage);
     return;
   }
-  if (options.version) {
+  if (args.includes("--version")) {
     process.stdout.write(`${package_default.version}
 `);
     return;
   }
-  const inputPath = path2.resolve(rootDir, options.input);
-  const outputPath = path2.resolve(rootDir, options.out);
-  const markdown = await readFile(inputPath, "utf8");
-  const result = markdownToPptxResult(markdown, {
-    title: options.title,
-    sourcePath: inputPath,
-    resolveImage: resolveLocalImage
-  });
-  await mkdir(path2.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, result.pptx);
-  for (const diagnostic of result.diagnostics) {
-    process.stderr.write(`${diagnostic.severity}: ${diagnostic.code}: ${diagnostic.message}
-`);
+  let input = "";
+  let out = "";
+  const options = {
+    sheetMode: "single",
+    sheetHeadingDepth: 1,
+    tableStyle: "bordered",
+    headerRow: true
+  };
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === "--out") {
+      out = readOption(args, i, arg);
+      i += 1;
+    } else if (arg === "--sheet-mode") {
+      options.sheetMode = readSheetMode(readOption(args, i, arg));
+      i += 1;
+    } else if (arg === "--sheet-heading-depth") {
+      options.sheetHeadingDepth = readSheetHeadingDepth(readOption(args, i, arg));
+      i += 1;
+    } else if (arg === "--title") {
+      options.title = readOption(args, i, arg);
+      i += 1;
+    } else if (arg === "--table-style") {
+      options.tableStyle = readTableStyle(readOption(args, i, arg));
+      i += 1;
+    } else if (arg === "--no-header-row") {
+      options.headerRow = false;
+    } else if (arg.startsWith("--")) {
+      throw new CliUsageError(`Unknown option: ${arg}`);
+    } else if (!input) {
+      input = arg;
+    } else {
+      throw new CliUsageError(`Unexpected argument: ${arg}`);
+    }
   }
-  process.stdout.write(`Wrote ${path2.relative(rootDir, outputPath)}
-`);
+  if (!input) {
+    throw new CliUsageError("Input Markdown file is required.");
+  }
+  if (!out) {
+    throw new CliUsageError("--out <file> is required.");
+  }
+  const markdown = await readFile(input, "utf8");
+  options.imageAssets = await collectImageAssets(markdown, input);
+  const workbook = md2xlsx(markdown, options);
+  await mkdir(dirname(out), { recursive: true });
+  await writeFile(out, workbook);
 }
 
-// scripts/miku-md2pptx-cli.mjs
+// scripts/miku-md2xlsx-cli.mjs
 try {
   await main(process.argv.slice(2));
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}
 `);
-  process.exitCode = 1;
+  process.exitCode = Number.isInteger(error?.exitCode) ? error.exitCode : 1;
 }

@@ -1,13 +1,13 @@
 # Development Notes
 
-Checked on 2026-06-28.
+Checked on 2026-06-29.
 
 ## Current State
 
-- Package version: `0.4.0`
+- Package version: `0.4.1`
 - Runtime maturity: bundled-runtime execution for documented artifacts, with
   handoff behavior for unsupported or missing runtime paths.
-- Release zip: `bundle/igapyon-miku-ms-office-skills-0.4.0.zip`
+- Release zip: `bundle/igapyon-miku-ms-office-skills-0.4.1.zip`
 
 ## Initial Shape
 
@@ -37,8 +37,8 @@ Adopted decisions:
 Runtime artifacts are now bundled from the release anchors recorded in
 `skills/igapyon-miku-ms-office/references/upstreams.md`.
 
-Source artifacts are intentionally not bundled. The skill packages only runtime
-execution artifacts and the `miku-xlsx2md` runtime metadata JSON.
+Source artifacts are intentionally not bundled. The skill packages only CLI
+execution artifacts for the selected converter releases.
 
 ## Verification
 

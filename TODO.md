@@ -66,18 +66,14 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Tasks
 
-- [ ] Upstream CLI release asset gap: `miku-xlsx2md v1.2.0` currently bundles
-  `miku-xlsx2md-runtime-1.2.0.mjs` and
-  `miku-xlsx2md-runtime-1.2.0.json`, but no CLI artifact named
-  `miku-xlsx2md-1.2.0.mjs`.
-- [ ] Upstream CLI release asset gap: `miku-pptx2md v0.4.1` currently bundles
-  `miku-pptx2md-runtime-0.4.1.mjs` and
-  `miku-pptx2md-sources-0.4.1.tgz`, but no CLI artifact named
-  `miku-pptx2md-0.4.1.mjs`.
-- [ ] Ask the upstream projects to publish CLI `.mjs` release assets for
+- [x] Upstream CLI release asset gap for `miku-xlsx2md` is resolved by bundling
+  the latest CLI artifact `miku-xlsx2md-1.2.2.mjs`.
+- [x] Upstream CLI release asset gap for `miku-pptx2md` is resolved by bundling
+  the latest CLI artifact `miku-pptx2md-0.4.3.mjs`.
+- [x] Ask the upstream projects to publish CLI `.mjs` release assets for
   `miku-xlsx2md` and `miku-pptx2md`, matching the existing `miku-docx2md`
   split between `*-runtime-<version>.mjs` and `<tool>-<version>.mjs`.
-- [ ] After upstream CLI assets are published, add the two CLI `.mjs` files to
+- [x] After upstream CLI assets are published, add the two CLI `.mjs` files to
   `skills/igapyon-miku-ms-office/runtime/`, update
   `references/runtime-policy.md`, `references/upstreams.md`, `index.json`, and
   the bundle content tests.
@@ -92,6 +88,12 @@ Update this section while working. Do not rewrite unrelated TODO items.
 - [ ] Upstream CLI behavior request: make image/asset file export opt-in.
   Default behavior should not emit image files unless the user explicitly asks
   for an assets/images output option.
+- [ ] Upstream CLI behavior request: standardize `--version` output across
+  Node.js CLI artifacts. `miku-docx2md-1.1.0.mjs` prints
+  `miku-docx2md 1.1.0` and `miku-pptx2md-0.4.3.mjs` prints
+  `miku-pptx2md 0.4.3`, while the other Node.js CLIs print only the version
+  number. The upstream tool teams should decide and apply one consistent
+  format.
 - [ ] Upstream documentation request: describe Office-to-Markdown converters as
   quick text-extraction tools. Make clear that images, shapes, charts, and other
   visual content are unsupported or extremely limited, and that visual/layout
@@ -106,8 +108,7 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Blockers
 
-- Upstream release assets for `miku-xlsx2md-1.2.0.mjs` and
-  `miku-pptx2md-0.4.1.mjs` do not exist yet.
+- なし
 
 ### Retry Log
 

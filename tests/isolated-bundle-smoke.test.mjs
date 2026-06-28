@@ -11,19 +11,25 @@ const skillName = "igapyon-miku-ms-office";
 const expectedRuntimeFiles = [
   "miku-docx2md-1.0.0.1.jar",
   "miku-docx2md-1.1.0.mjs",
-  "miku-docx2md-runtime-1.1.0.mjs",
-  "miku-md2docx-0.9.1.1.mjs",
+  "miku-md2docx-0.9.2.mjs",
   "miku-md2docx-java-0.9.1.jar",
-  "miku-md2pptx-0.2.1.mjs",
+  "miku-md2pptx-0.2.2.mjs",
   "miku-md2pptx-java-0.2.2.jar",
-  "miku-md2xlsx-0.6.5.mjs",
+  "miku-md2xlsx-0.6.6.mjs",
   "miku-md2xlsx-java-0.6.5.jar",
   "miku-pptx2md-0.4.1.jar",
-  "miku-pptx2md-runtime-0.4.1.mjs",
+  "miku-pptx2md-0.4.3.mjs",
   "miku-xlsx2md-1.2.0.jar",
-  "miku-xlsx2md-runtime-1.2.0.json",
-  "miku-xlsx2md-runtime-1.2.0.mjs"
+  "miku-xlsx2md-1.2.2.mjs"
 ];
+const cliMjsFiles = new Set([
+  "miku-xlsx2md-1.2.2.mjs",
+  "miku-docx2md-1.1.0.mjs",
+  "miku-pptx2md-0.4.3.mjs",
+  "miku-md2docx-0.9.2.mjs",
+  "miku-md2pptx-0.2.2.mjs",
+  "miku-md2xlsx-0.6.6.mjs"
+]);
 
 test("generated bundle works from an isolated install shape", () => {
   execFileSync("npm", ["run", "build:bundle"], {
@@ -50,16 +56,18 @@ test("generated bundle works from an isolated install shape", () => {
   for (const runtimeFile of runtimeFiles) {
     const runtimePath = path.resolve(runtimeRoot, runtimeFile);
     if (runtimeFile.endsWith(".jar")) {
-      execFileSync("java", ["-jar", runtimePath, "--version"], {
+      const output = execFileSync("java", ["-jar", runtimePath, "--version"], {
         cwd: isolatedRoot,
         encoding: "utf8"
       });
+      assert.notEqual(output.trim(), "", `${runtimeFile} --version produced no output`);
     }
-    if (runtimeFile.endsWith(".mjs")) {
-      execFileSync("node", [runtimePath, "--version"], {
+    if (cliMjsFiles.has(runtimeFile)) {
+      const output = execFileSync("node", [runtimePath, "--version"], {
         cwd: isolatedRoot,
         encoding: "utf8"
       });
+      assert.notEqual(output.trim(), "", `${runtimeFile} --version produced no output`);
     }
     if (runtimeFile.endsWith(".json")) {
       JSON.parse(fs.readFileSync(runtimePath, "utf8"));

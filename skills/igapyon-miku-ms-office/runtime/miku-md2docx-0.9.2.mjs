@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-globalThis.__MIKU_MD2DOCX_VERSION = "0.9.1";
+globalThis.__MIKU_MD2DOCX_VERSION = "0.9.2";
 
 // scripts/lib/cli-support.mjs
 import { dirname, resolve } from "node:path";
