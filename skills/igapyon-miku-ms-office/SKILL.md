@@ -5,12 +5,21 @@ description: Use only when the user explicitly names `igapyon-miku-ms-office`, `
 
 # igapyon-miku-ms-office
 
-Use this skill to route Microsoft Office and Markdown conversion work to the
-appropriate miku-soft upstream tool.
+Use this skill to select and run the appropriate miku-soft upstream CLI tool
+for Microsoft Office and Markdown conversion work.
 
-This skill is an agent workflow adapter. It does not implement conversion logic.
-Use upstream runtime artifacts, documented CLIs, or handoff instructions, and
-preserve upstream diagnostics and limitations.
+This skill is an agent workflow adapter for existing CLI commands. It does not
+implement conversion logic. Use upstream runtime artifacts, documented CLIs, or
+handoff instructions, and preserve upstream diagnostics and limitations.
+
+Office-to-Markdown conversion is primarily for quick text extraction. Images,
+shapes, charts, and other visual content are unsupported or only supported in
+very limited ways unless the selected upstream tool explicitly documents a
+specific capability.
+
+Use this skill when the user wants miku-soft Office/Markdown conversion through
+the supported converter family. Do not use it for layout-faithful conversion,
+visual asset extraction, or generic Office document editing.
 
 ## Required First Checks
 
@@ -24,6 +33,14 @@ preserve upstream diagnostics and limitations.
 ## Core Rules
 
 - Keep product behavior in the upstream miku tools.
+- Set expectations that Office-to-Markdown output is text-focused and not a
+  layout-preserving or visual-content-preserving conversion.
+- Select the converter from the requested source and target formats before
+  selecting a backend.
+- For Office-to-Markdown input extensions `.xlsx`, `.docx`, and `.pptx`, the
+  Markdown target is unambiguous.
+- For Markdown input, do not infer the target Office format from `.md` alone;
+  require an explicit output extension or target option.
 - Prefer declared runtime artifacts under `runtime/` when CLI-backed execution
   is documented and the artifact is present.
 - If runtime artifacts are absent, use handoff-only guidance and tell the user

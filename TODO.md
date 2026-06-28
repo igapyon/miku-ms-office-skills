@@ -66,11 +66,48 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Tasks
 
-- なし
+- [ ] Upstream CLI release asset gap: `miku-xlsx2md v1.2.0` currently bundles
+  `miku-xlsx2md-runtime-1.2.0.mjs` and
+  `miku-xlsx2md-runtime-1.2.0.json`, but no CLI artifact named
+  `miku-xlsx2md-1.2.0.mjs`.
+- [ ] Upstream CLI release asset gap: `miku-pptx2md v0.4.1` currently bundles
+  `miku-pptx2md-runtime-0.4.1.mjs` and
+  `miku-pptx2md-sources-0.4.1.tgz`, but no CLI artifact named
+  `miku-pptx2md-0.4.1.mjs`.
+- [ ] Ask the upstream projects to publish CLI `.mjs` release assets for
+  `miku-xlsx2md` and `miku-pptx2md`, matching the existing `miku-docx2md`
+  split between `*-runtime-<version>.mjs` and `<tool>-<version>.mjs`.
+- [ ] After upstream CLI assets are published, add the two CLI `.mjs` files to
+  `skills/igapyon-miku-ms-office/runtime/`, update
+  `references/runtime-policy.md`, `references/upstreams.md`, `index.json`, and
+  the bundle content tests.
+- [ ] Upstream CLI behavior request: when no output option is specified, write a
+  normal output file instead of requiring stdout-oriented usage. Define the
+  default output path consistently for `miku-xlsx2md`, `miku-docx2md`, and
+  `miku-pptx2md`.
+- [ ] Upstream CLI behavior request: keep the ordinary conversion interface to a
+  single output-file option only. Do not require or default to metadata-style
+  outputs such as summary files, manifests, or diagnostics files for normal
+  conversion.
+- [ ] Upstream CLI behavior request: make image/asset file export opt-in.
+  Default behavior should not emit image files unless the user explicitly asks
+  for an assets/images output option.
+- [ ] Upstream documentation request: describe Office-to-Markdown converters as
+  quick text-extraction tools. Make clear that images, shapes, charts, and other
+  visual content are unsupported or extremely limited, and that visual/layout
+  fidelity is not the intended use case.
+- [ ] Upstream CLI behavior request: support automatic converter selection from
+  the input file extension for Office-to-Markdown inputs. Treat `.xlsx`,
+  `.docx`, and `.pptx` as unambiguous sources for Markdown output, and derive
+  the default output path as `<input-basename>.md` when no output path is
+  specified. Do not apply automatic target selection to Markdown input; require
+  the user to specify the output format explicitly with an output extension or
+  target option for Markdown-to-Office conversions.
 
 ### Blockers
 
-- なし
+- Upstream release assets for `miku-xlsx2md-1.2.0.mjs` and
+  `miku-pptx2md-0.4.1.mjs` do not exist yet.
 
 ### Retry Log
 
