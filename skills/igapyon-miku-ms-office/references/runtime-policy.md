@@ -3,6 +3,10 @@
 Current maturity: bundled-runtime execution for the listed runtime artifacts,
 with handoff behavior for missing or unsupported execution paths.
 
+Office-to-Markdown execution is text-focused. Treat images, shapes, charts, and
+other visual content as unsupported or extremely limited unless the selected
+upstream runtime explicitly documents support for that content type.
+
 Bundled runtime anchors are recorded in [upstreams.md](upstreams.md). Treat a
 runtime as executable only when the corresponding `.mjs` or `.jar` file is
 actually present under `runtime/`.
@@ -74,6 +78,14 @@ Runtime metadata:
 - `*-only` user requests must not silently fall back to another backend.
 - If the requested `*-only` backend is missing, stop and report the missing
   runtime instead of trying the other backend.
+- Office-to-Markdown converters may use `.xlsx`, `.docx`, and `.pptx` input
+  extensions to select the Markdown converter direction.
+- Markdown input must not be used to infer a Markdown-to-Office target. Require
+  an explicit output extension or target option such as `.xlsx`, `.docx`, or
+  `.pptx`.
+- Prefer a single ordinary output file for normal conversion. Metadata outputs,
+  summaries, manifests, diagnostics files, and image/asset exports should be
+  opt-in when the upstream CLI supports them.
 - Preserve stdout, stderr, exit code, and output artifact paths in the final
   report.
 - Write scratch outputs under `workplace/` unless the user gives an explicit

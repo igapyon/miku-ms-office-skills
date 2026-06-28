@@ -1,14 +1,19 @@
 # miku-ms-office-skills
 
-`miku-ms-office-skills` is an Agent Skills package for choosing and using the
-miku-soft Microsoft Office and Markdown conversion tools from AI agent
-workflows.
+`miku-ms-office-skills` is an Agent Skills package that helps AI agents select
+and run the appropriate miku-soft CLI converter for Microsoft Office and
+Markdown workflows.
 
 The installable skill is `igapyon-miku-ms-office`. The current package version
 is `0.4.0`.
 
-Use this package when an AI agent needs to explicitly route between Microsoft
-Office files and Markdown with the miku-soft converter family.
+It wraps existing CLI/runtime artifacts with routing, execution policy, and
+limitation guidance. It does not implement conversion logic itself.
+
+The Office-to-Markdown converters are intended for quick text extraction.
+Images, shapes, charts, and other visual content are unsupported or only
+covered in very limited ways. Use them when getting the textual content quickly
+is more important than preserving document layout or visual fidelity.
 
 ## Agent Usage
 
@@ -30,11 +35,27 @@ Supported directions:
 If no output path is provided, agents should use `workplace/` for scratch
 outputs.
 
+## When To Use
+
+- Extract text quickly from `.xlsx`, `.docx`, or `.pptx` files into Markdown.
+- Generate Office files from Markdown when the target format is explicit.
+- Use bundled miku-soft CLI/runtime artifacts from an agent workflow.
+
+## When Not To Use
+
+- Preserve Office layout, styling, charts, diagrams, shapes, or embedded media.
+- Convert arbitrary Office files without knowing the source and target formats.
+- Infer Markdown-to-Office target formats from `.md` input alone.
+
 ## Scope
 
-This repository is a workflow adapter. It does not implement Office conversion
-logic. Conversion behavior belongs to the upstream miku-soft repositories and
-their runtime artifacts.
+This repository is a workflow adapter for existing CLI commands. It does not
+implement Office conversion logic. Conversion behavior belongs to the upstream
+miku-soft repositories and their runtime artifacts.
+
+For Office-to-Markdown workflows, the practical scope is text-focused
+extraction. Visual objects such as images, shapes, and charts should be treated
+as out of scope unless a specific upstream converter documents limited support.
 
 The initial scope covers these upstream families:
 
