@@ -90,7 +90,7 @@
       "purpose": "Bundled Java runtime artifact."
     },
     {
-      "path": "runtime/miku-xlsx2md-1.2.2.mjs",
+      "path": "runtime/miku-xlsx2md-1.2.3.mjs",
       "type": "file",
       "purpose": "Bundled Node.js runtime artifact."
     }
