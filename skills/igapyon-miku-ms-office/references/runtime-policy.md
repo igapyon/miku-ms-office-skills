@@ -80,12 +80,40 @@ Java CLI artifacts:
 - Prefer a single ordinary output file for normal conversion. Metadata outputs,
   summaries, manifests, diagnostics files, and image/asset exports should be
   opt-in when the upstream CLI supports them.
+- For normal conversion, pass only the input path plus the primary `--out`
+  option when that converter uses `--out`. Do not add optional extra-output
+  flags unless the user explicitly asks for those artifacts.
 - Preserve stdout, stderr, exit code, and output artifact paths in the final
   report.
 - Write scratch outputs under `workplace/` unless the user gives an explicit
   output path.
 - Do not overwrite input Office or Markdown files unless the user explicitly
   asks for in-place behavior and the upstream tool supports it.
+
+## Normal Conversion Output Policy
+
+Normal conversion means the user asked only to convert between Office and
+Markdown, without asking for diagnostic, summary, archive, batch/directory, or
+extracted asset artifacts.
+
+This policy applies to both bundled Node.js CLI artifacts and bundled Java CLI
+artifacts. Backend choice must not change whether extra output artifacts are
+opt-in.
+
+Use only the primary output for these normal conversions:
+
+| Direction | Primary output | Extra outputs that require explicit user request |
+| --- | --- | --- |
+| `.xlsx` to Markdown | `--out <file>.md` | `--zip`, `--summary`, Java directory conversion options, shape-detail/debug-style exports |
+| `.docx` to Markdown | `--out <file>.md` | `--summary`, `--summary-out`, `--assets-dir`, `--debug`, Java batch/directory conversion options, verbose diagnostics |
+| `.pptx` to Markdown | `--out <file>.md` | `--summary`, `--summary-out`, `--summary-json-out`, `--assets-dir`, `--debug`, verbose diagnostics |
+| Markdown to `.xlsx` | `--out <file>.xlsx` | no separate artifact output by default |
+| Markdown to `.docx` | `--out <file>.docx` | `--summary`, `--summary-out`, verbose diagnostics |
+| Markdown to `.pptx` | `--out <file>.pptx` | no separate artifact output by default |
+
+Formatting and content-shaping options such as sheet mode, title, notes, table
+style, or encoding may be used only when they are needed to satisfy the user's
+requested output. They are not separate artifact outputs.
 
 ## Handoff Shape
 
