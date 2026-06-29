@@ -38,7 +38,7 @@ report the missing artifact and stay in handoff-only mode.
 
 Node.js CLI artifacts:
 
-- `miku-xlsx2md-1.2.2.mjs`
+- `miku-xlsx2md-1.2.3.mjs`
 - `miku-docx2md-1.1.0.mjs`
 - `miku-pptx2md-0.4.3.mjs`
 - `miku-md2xlsx-0.6.6.mjs`

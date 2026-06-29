@@ -67,7 +67,7 @@ Update this section while working. Do not rewrite unrelated TODO items.
 ### Tasks
 
 - [x] Upstream CLI release asset gap for `miku-xlsx2md` is resolved by bundling
-  the latest CLI artifact `miku-xlsx2md-1.2.2.mjs`.
+  the latest CLI artifact `miku-xlsx2md-1.2.3.mjs`.
 - [x] Upstream CLI release asset gap for `miku-pptx2md` is resolved by bundling
   the latest CLI artifact `miku-pptx2md-0.4.3.mjs`.
 - [x] Ask the upstream projects to publish CLI `.mjs` release assets for

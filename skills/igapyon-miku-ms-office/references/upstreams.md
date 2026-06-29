@@ -14,7 +14,7 @@ Compatibility source status:
 
 | Tool | Bundled anchor | Bundled runtime artifacts | Status |
 | --- | --- | --- | --- |
-| `miku-xlsx2md` | release `v1.2.2`, published 2026-06-28 | `miku-xlsx2md-1.2.2.mjs` | bundled |
+| `miku-xlsx2md` | release `v1.2.3`, published 2026-06-28 | `miku-xlsx2md-1.2.3.mjs` | bundled |
 | `miku-docx2md` | release `v1.1.0`, published 2026-06-24 | `miku-docx2md-1.1.0.mjs` | bundled |
 | `miku-pptx2md` | release `v0.4.3`, published 2026-06-28 | `miku-pptx2md-0.4.3.mjs` | bundled |
 | `miku-md2xlsx` | release `v0.6.6`, published 2026-06-28 | `miku-md2xlsx-0.6.6.mjs` | bundled |
