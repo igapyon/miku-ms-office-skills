@@ -60,6 +60,40 @@ test("skill rules keep normal conversion to the primary output only", () => {
   }
 });
 
+test("skill documents AI-agent intent without AI runtime dependency", () => {
+  const skillMarkdown = fs.readFileSync(path.resolve(skillRoot, "SKILL.md"), "utf8");
+  const runtimePolicy = fs.readFileSync(
+    path.resolve(skillRoot, "references/runtime-policy.md"),
+    "utf8"
+  );
+  const toolMap = fs.readFileSync(
+    path.resolve(skillRoot, "references/tool-map.md"),
+    "utf8"
+  );
+
+  for (const expected of [
+    "quickly turn Word, Excel, and PowerPoint files into lightweight Markdown",
+    "it does not use AI during conversion",
+    "network access and LLM/API access are",
+    "not required for conversion",
+    "Treat this skill as AI-oriented but not AI-dependent"
+  ]) {
+    assert.ok(
+      `${skillMarkdown}\n${runtimePolicy}`.includes(expected),
+      `missing AI-agent runtime contract: ${expected}`
+    );
+  }
+
+  assert.ok(
+    toolMap.includes("The primary AI-agent workflow is Office-to-Markdown"),
+    "tool map must identify Office-to-Markdown as the primary AI-agent workflow"
+  );
+  assert.ok(
+    `${skillMarkdown}\n${runtimePolicy}`.includes("Markdown-to-Office conversion as experimental"),
+    "Markdown-to-Office must remain documented as experimental"
+  );
+});
+
 test("runtime policy documents primary-only output for every conversion direction", () => {
   const runtimePolicy = fs.readFileSync(
     path.resolve(skillRoot, "references/runtime-policy.md"),

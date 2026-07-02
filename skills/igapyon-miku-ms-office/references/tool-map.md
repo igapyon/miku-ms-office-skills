@@ -2,6 +2,11 @@
 
 Choose the upstream tool from the requested source and target format.
 
+The primary AI-agent workflow is Office-to-Markdown: convert `.docx`, `.xlsx`,
+or `.pptx` into lightweight Markdown so an AI agent can inspect the text
+quickly. Markdown-to-Office directions are available, but they are experimental
+and require an explicit Office target format.
+
 | Input | Output | Node.js upstream | Java upstream |
 | --- | --- | --- | --- |
 | `.xlsx` | Markdown | `miku-xlsx2md` | `miku-xlsx2md-java` |
@@ -22,6 +27,8 @@ Choose the upstream tool from the requested source and target format.
    `runtime-policy.md` for the selected converter's CLI-capable artifact.
 5. If no runtime artifact is present, produce a handoff with the selected
    upstream repository and the required input/output paths.
+6. Do not invoke AI, LLM APIs, OCR services, or network services while routing
+   or executing a conversion.
 
 ## Ambiguous Requests
 

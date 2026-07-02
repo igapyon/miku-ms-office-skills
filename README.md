@@ -5,7 +5,18 @@ and run the appropriate miku-soft CLI converter for Microsoft Office and
 Markdown workflows.
 
 The installable skill is `igapyon-miku-ms-office`. The current package version
-is `0.6.0`.
+is `0.6.1`.
+
+This repository is designed for generative AI and AI agent workflows. Its main
+purpose is to turn Word (`.docx`), Excel (`.xlsx`), and PowerPoint (`.pptx`)
+files into lightweight Markdown quickly, so an AI agent can inspect, summarize,
+search, or reason over the document text without first handling Office formats
+directly.
+
+The conversion itself does not use AI. Runtime execution is local and
+deterministic, using bundled Node.js `.mjs` or Java `.jar` artifacts. Once the
+runtime artifacts are present, no network connection or LLM/API access is
+required to run conversions.
 
 It wraps existing CLI/runtime artifacts with routing, execution policy, and
 limitation guidance. It does not implement conversion logic itself.
@@ -14,6 +25,13 @@ The Office-to-Markdown converters are intended for quick text extraction.
 Images, shapes, charts, and other visual content are unsupported or only
 covered in very limited ways. Use them when getting the textual content quickly
 is more important than preserving document layout or visual fidelity.
+
+Markdown-to-Office conversion is also available for `.md` to `.docx`, `.xlsx`,
+and `.pptx`, but this direction is experimental and should be treated as a
+generation aid rather than a layout-faithful Office authoring system.
+
+For a compact AI-agent-oriented summary, see
+[docs/ai-agent-overview.md](docs/ai-agent-overview.md).
 
 ## Agent Usage
 
@@ -37,15 +55,22 @@ outputs.
 
 ## When To Use
 
-- Extract text quickly from `.xlsx`, `.docx`, or `.pptx` files into Markdown.
-- Generate Office files from Markdown when the target format is explicit.
-- Use bundled miku-soft CLI/runtime artifacts from an agent workflow.
+- Extract text quickly from `.docx`, `.xlsx`, or `.pptx` files into Markdown
+  for AI agent reading, search, summarization, or downstream processing.
+- Run Office-to-Markdown conversion locally without network access or AI
+  runtime dependency.
+- Generate Office files from Markdown when the target format is explicit,
+  accepting that Markdown-to-Office support is experimental.
+- Use bundled miku-soft CLI/runtime artifacts from an agent workflow with
+  minimal external dependencies.
 
 ## When Not To Use
 
 - Preserve Office layout, styling, charts, diagrams, shapes, or embedded media.
 - Convert arbitrary Office files without knowing the source and target formats.
 - Infer Markdown-to-Office target formats from `.md` input alone.
+- Expect AI-based OCR, image understanding, document interpretation, or content
+  rewriting during conversion.
 
 ## Scope
 

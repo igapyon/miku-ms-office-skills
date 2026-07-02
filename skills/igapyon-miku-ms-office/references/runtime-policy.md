@@ -3,6 +3,11 @@
 Current maturity: bundled-runtime execution for the listed runtime artifacts,
 with handoff behavior for missing or unsupported execution paths.
 
+This skill is AI-oriented but not AI-dependent. The normal use case is to
+produce Markdown that generative AI or an AI agent can consume quickly, but the
+conversion step itself is a local CLI operation and must not call an LLM, AI
+API, or network service.
+
 Office-to-Markdown execution is text-focused. Treat images, shapes, charts, and
 other visual content as unsupported or extremely limited unless the selected
 upstream runtime explicitly documents support for that content type.
@@ -15,6 +20,10 @@ commands.
 ## Runtime Lookup
 
 Check `runtime/` before attempting CLI execution.
+
+Runtime execution requires a local Node.js or Java runtime depending on the
+selected artifact. Once the artifact is bundled locally, do not require network
+access for normal conversion.
 
 Bundled CLI artifact patterns:
 
@@ -77,6 +86,8 @@ Java CLI artifacts:
 - Markdown input must not be used to infer a Markdown-to-Office target. Require
   an explicit output extension or target option such as `.xlsx`, `.docx`, or
   `.pptx`.
+- Treat Markdown-to-Office conversion as experimental generation support. Do
+  not present it as layout-faithful Office authoring.
 - Prefer a single ordinary output file for normal conversion. Metadata outputs,
   summaries, manifests, diagnostics files, and image/asset exports should be
   opt-in when the upstream CLI supports them.
