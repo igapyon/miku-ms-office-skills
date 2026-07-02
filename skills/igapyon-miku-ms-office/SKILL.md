@@ -8,9 +8,15 @@ description: Use only when the user explicitly names `igapyon-miku-ms-office`, `
 Use this skill to select and run the appropriate miku-soft upstream CLI tool
 for Microsoft Office and Markdown conversion work.
 
+This skill is for AI-agent-oriented document intake. Its primary job is to
+quickly turn Word, Excel, and PowerPoint files into lightweight Markdown so an
+AI agent can read, search, summarize, or reason over the text. It is not a
+layout-preserving Office conversion workflow.
+
 This skill is an agent workflow adapter for existing CLI commands. It does not
-implement conversion logic. Use upstream runtime artifacts, documented CLIs, or
-handoff instructions, and preserve upstream diagnostics and limitations.
+implement conversion logic and it does not use AI during conversion. Use
+upstream runtime artifacts, documented CLIs, or handoff instructions, and
+preserve upstream diagnostics and limitations.
 
 Office-to-Markdown conversion is primarily for quick text extraction. Images,
 shapes, charts, and other visual content are unsupported or only supported in
@@ -20,6 +26,10 @@ specific capability.
 Use this skill when the user wants miku-soft Office/Markdown conversion through
 the supported converter family. Do not use it for layout-faithful conversion,
 visual asset extraction, or generic Office document editing.
+
+Runtime execution is local. Node.js or Java is required according to the
+selected bundled runtime artifact, but network access and LLM/API access are
+not required for conversion.
 
 ## Required First Checks
 
@@ -33,6 +43,8 @@ visual asset extraction, or generic Office document editing.
 ## Core Rules
 
 - Keep product behavior in the upstream miku tools.
+- Treat this skill as AI-oriented but not AI-dependent: make Markdown that AI
+  agents can consume, but do not call AI services to perform conversion.
 - Set expectations that Office-to-Markdown output is text-focused and not a
   layout-preserving or visual-content-preserving conversion.
 - Select the converter from the requested source and target formats before
@@ -53,6 +65,8 @@ visual asset extraction, or generic Office document editing.
   requested extra artifacts in explicit paths.
 - Use `workplace/` for scratch outputs when the user does not specify an output
   location.
+- Treat Markdown-to-Office conversion as experimental and require an explicit
+  target format.
 
 ## Supported Tool Families
 
