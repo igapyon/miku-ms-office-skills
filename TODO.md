@@ -18,8 +18,9 @@ distributable Agent Skills package.
 - [x] Record candidate versions and artifact names in
   `skills/igapyon-miku-ms-office/references/upstreams.md`.
 - [x] Resolve deferred runtime artifacts:
-  `miku-pptx2md` now has a runtime asset on release `v0.4.1`, and
-  `miku-md2pptx-java` now has release `v0.2.2`.
+  `miku-pptx2md` gained a runtime asset on release `v0.4.1`, and
+  `miku-md2pptx-java` gained release `v0.2.2`; both were later refreshed by
+  subsequent runtime updates.
 
 ### 2. Collect Runtime Artifacts
 
@@ -66,10 +67,21 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Tasks
 
-- [x] Upstream CLI release asset gap for `miku-xlsx2md` is resolved by bundling
-  the latest CLI artifact `miku-xlsx2md-1.2.3.mjs`.
-- [x] Upstream CLI release asset gap for `miku-pptx2md` is resolved by bundling
-  the latest CLI artifact `miku-pptx2md-0.4.3.mjs`.
+- [x] Update bundled runtime artifacts to latest checked releases from
+  2026-07-02 for changed Node.js and Java converters:
+  `miku-xlsx2md` `v1.3.0`, `miku-docx2md` `v1.2.1`,
+  `miku-pptx2md` `v0.5.1`, `miku-xlsx2md-java` `v1.3.0`,
+  `miku-docx2md-java` `v1.2.1`, `miku-pptx2md-java` `v0.5.1`, and
+  `miku-md2pptx-java` `v0.2.3`.
+- [x] After replacing runtime artifacts, update `runtime-policy.md`,
+  `upstreams.md`, `index.json`, tests, development notes, and run
+  `npm test`, `npm run build`, and skill validation.
+- [x] Upstream CLI release asset gap for `miku-xlsx2md` was resolved by
+  bundling CLI artifact `miku-xlsx2md-1.2.3.mjs`; this artifact was later
+  superseded by the 2026-07-02 runtime refresh.
+- [x] Upstream CLI release asset gap for `miku-pptx2md` was resolved by
+  bundling CLI artifact `miku-pptx2md-0.4.3.mjs`; this artifact was later
+  superseded by the 2026-07-02 runtime refresh.
 - [x] Ask the upstream projects to publish CLI `.mjs` release assets for
   `miku-xlsx2md` and `miku-pptx2md`, matching the existing `miku-docx2md`
   split between `*-runtime-<version>.mjs` and `<tool>-<version>.mjs`.
@@ -89,11 +101,15 @@ Update this section while working. Do not rewrite unrelated TODO items.
   Default behavior should not emit image files unless the user explicitly asks
   for an assets/images output option.
 - [ ] Upstream CLI behavior request: standardize `--version` output across
-  Node.js CLI artifacts. `miku-docx2md-1.1.0.mjs` prints
-  `miku-docx2md 1.1.0` and `miku-pptx2md-0.4.3.mjs` prints
-  `miku-pptx2md 0.4.3`, while the other Node.js CLIs print only the version
-  number. The upstream tool teams should decide and apply one consistent
-  format.
+  Node.js and Java CLI artifacts. Checked after the 2026-07-02 runtime refresh:
+  `miku-docx2md` and `miku-pptx2md` print `<tool> <version>`, while
+  `miku-xlsx2md`, `miku-md2xlsx`, `miku-md2docx`, and `miku-md2pptx` print only
+  the version number. Ask upstream tool teams to decide and apply one
+  consistent format.
+- [ ] Upstream CLI help request: standardize `--help` usage examples so bundled
+  single-file artifacts do not show source-tree commands such as
+  `node scripts/...`, `npm run cli -- ...`, or `java -jar target/...` when they
+  are executed from an Agent Skill runtime directory.
 - [ ] Upstream documentation request: describe Office-to-Markdown converters as
   quick text-extraction tools. Make clear that images, shapes, charts, and other
   visual content are unsupported or extremely limited, and that visual/layout

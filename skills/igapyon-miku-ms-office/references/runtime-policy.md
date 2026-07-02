@@ -38,21 +38,21 @@ report the missing artifact and stay in handoff-only mode.
 
 Node.js CLI artifacts:
 
-- `miku-xlsx2md-1.2.3.mjs`
-- `miku-docx2md-1.1.0.mjs`
-- `miku-pptx2md-0.4.3.mjs`
+- `miku-xlsx2md-1.3.0.mjs`
+- `miku-docx2md-1.2.1.mjs`
+- `miku-pptx2md-0.5.1.mjs`
 - `miku-md2xlsx-0.6.6.mjs`
 - `miku-md2docx-0.9.2.mjs`
 - `miku-md2pptx-0.2.2.mjs`
 
 Java CLI artifacts:
 
-- `miku-xlsx2md-1.2.0.jar`
-- `miku-docx2md-1.0.0.1.jar`
-- `miku-pptx2md-0.4.1.jar`
+- `miku-xlsx2md-1.3.0.jar`
+- `miku-docx2md-1.2.1.jar`
+- `miku-pptx2md-0.5.1.jar`
 - `miku-md2xlsx-java-0.6.5.jar`
 - `miku-md2docx-java-0.9.1.jar`
-- `miku-md2pptx-java-0.2.2.jar`
+- `miku-md2pptx-java-0.2.3.jar`
 
 ## Backend Selection
 

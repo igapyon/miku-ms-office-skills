@@ -18,10 +18,13 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 ## Current State
 
 - `miku-ms-office-skills` has a runtime-aware Agent Skills package.
-- Current package version is `0.4.2`.
+- Current package version is `0.6.0`.
 - The installable skill is `skills/igapyon-miku-ms-office/`.
 - Runtime artifacts are bundled under `skills/igapyon-miku-ms-office/runtime/`.
-- `bundle/igapyon-miku-ms-office-skills-0.4.2.zip` was generated with bundled
+- Runtime artifacts were refreshed on 2026-07-02 for updated Node.js and Java
+  converter releases recorded in
+  `skills/igapyon-miku-ms-office/references/upstreams.md`.
+- `bundle/igapyon-miku-ms-office-skills-0.6.0.zip` was generated with bundled
   runtime artifacts.
 - The project goal has been updated to completing a distributable runtime-aware
   Agent Skills package, not just the initial skeleton.
@@ -52,3 +55,6 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 
 - 2026-06-28: `npm run build`: passed after bundling runtime artifacts and adding contract tests.
 - 2026-06-28: `python3 /Users/igapyon/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/igapyon-miku-ms-office`: passed after bundling runtime artifacts and adding contract tests.
+- 2026-07-02: `npm test`: passed after runtime artifact refresh.
+- 2026-07-02: `npm run build`: passed after runtime artifact refresh.
+- 2026-07-02: `python3 /Users/igapyon/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/igapyon-miku-ms-office`: passed after runtime artifact refresh.

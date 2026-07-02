@@ -1,13 +1,13 @@
 # Development Notes
 
-Checked on 2026-06-29.
+Checked on 2026-07-02.
 
 ## Current State
 
-- Package version: `0.4.2`
+- Package version: `0.6.0`
 - Runtime maturity: bundled-runtime execution for documented artifacts, with
   handoff behavior for unsupported or missing runtime paths.
-- Release zip: `bundle/igapyon-miku-ms-office-skills-0.4.2.zip`
+- Release zip: `bundle/igapyon-miku-ms-office-skills-0.6.0.zip`
 
 ## Initial Shape
 
@@ -37,6 +37,9 @@ Adopted decisions:
 Runtime artifacts are now bundled from the release anchors recorded in
 `skills/igapyon-miku-ms-office/references/upstreams.md`.
 
+On 2026-07-02, bundled runtime artifacts were refreshed for updated
+Office-to-Markdown Node.js and Java converters, plus `miku-md2pptx-java`.
+
 Source artifacts are intentionally not bundled. The skill packages only CLI
 execution artifacts for the selected converter releases.
 
@@ -47,3 +50,9 @@ Checked on 2026-06-28:
 - `npm test`: passed
 - `npm run build`: passed
 - `python3 /Users/igapyon/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/igapyon-miku-ms-office`: passed
+
+Checked on 2026-07-02:
+
+- `npm test`: passed after runtime refresh
+- `npm run build`: passed after runtime refresh
+- `python3 /Users/igapyon/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/igapyon-miku-ms-office`: passed after runtime refresh
