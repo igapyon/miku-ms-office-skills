@@ -9,23 +9,23 @@ const ROOT = process.cwd();
 const repoName = "miku-ms-office-skills";
 const skillName = "igapyon-miku-ms-office";
 const expectedRuntimeFiles = [
-  "miku-docx2md-1.0.0.1.jar",
-  "miku-docx2md-1.1.0.mjs",
+  "miku-docx2md-1.2.1.jar",
+  "miku-docx2md-1.2.1.mjs",
   "miku-md2docx-0.9.2.mjs",
   "miku-md2docx-java-0.9.1.jar",
   "miku-md2pptx-0.2.2.mjs",
-  "miku-md2pptx-java-0.2.2.jar",
+  "miku-md2pptx-java-0.2.3.jar",
   "miku-md2xlsx-0.6.6.mjs",
   "miku-md2xlsx-java-0.6.5.jar",
-  "miku-pptx2md-0.4.1.jar",
-  "miku-pptx2md-0.4.3.mjs",
-  "miku-xlsx2md-1.2.0.jar",
-  "miku-xlsx2md-1.2.3.mjs"
+  "miku-pptx2md-0.5.1.jar",
+  "miku-pptx2md-0.5.1.mjs",
+  "miku-xlsx2md-1.3.0.jar",
+  "miku-xlsx2md-1.3.0.mjs"
 ];
 const cliMjsFiles = new Set([
-  "miku-xlsx2md-1.2.3.mjs",
-  "miku-docx2md-1.1.0.mjs",
-  "miku-pptx2md-0.4.3.mjs",
+  "miku-xlsx2md-1.3.0.mjs",
+  "miku-docx2md-1.2.1.mjs",
+  "miku-pptx2md-0.5.1.mjs",
   "miku-md2docx-0.9.2.mjs",
   "miku-md2pptx-0.2.2.mjs",
   "miku-md2xlsx-0.6.6.mjs"
