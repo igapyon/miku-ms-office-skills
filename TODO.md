@@ -67,6 +67,34 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Tasks
 
+- [x] Refresh the bundled Markdown-to-Office runtimes to the latest releases
+  checked on 2026-07-18:
+  `miku-md2xlsx` / `miku-md2xlsx-java` `v0.9.5`,
+  `miku-md2docx` / `miku-md2docx-java` `v1.0.1`, and
+  `miku-md2pptx` / `miku-md2pptx-java` `v0.6.0`.
+  All six runtimes were replaced together. Release SHA-256 values and
+  `--version` output were verified, representative Node/Java conversions
+  produced valid Office ZIP packages, `runtime-policy.md`, `upstreams.md`,
+  `index.json`, bundle-content tests, smoke tests, `docs/development.md`,
+  `TODO.md`, and `HANDOFF.md` were updated, and the 0.6.2 zip was regenerated.
+  DOCX key XML matched exactly. XLSX and PPTX generated the same package entry
+  sets but retained implementation-level XML differences documented in
+  `docs/development.md`.
+- [ ] Decide whether to accept the observed Node/Java XML differences before
+  final release. XLSX differs in worksheet blank-row placement, rich-text
+  representation, and styles. PPTX differs in XML whitespace and the
+  presentation default-text-style representation. Confirm whether these are
+  acceptable implementation-level differences or require upstream parity
+  fixes; see `docs/development.md` for the comparison record.
+- [x] Record the 2026-07-18 upstream `--help` improvement requests for all six
+  Markdown-to-Office runtimes:
+  [md2xlsx Node #23](https://github.com/igapyon/miku-md2xlsx/issues/23),
+  [md2xlsx Java #6](https://github.com/igapyon/miku-md2xlsx-java/issues/6),
+  [md2docx Node #19](https://github.com/igapyon/miku-md2docx/issues/19),
+  [md2docx Java #9](https://github.com/igapyon/miku-md2docx-java/issues/9),
+  [md2pptx Node #9](https://github.com/igapyon/miku-md2pptx/issues/9), and
+  [md2pptx Java #6](https://github.com/igapyon/miku-md2pptx-java/issues/6).
+
 - [x] Update bundled runtime artifacts to latest checked releases from
   2026-07-02 for changed Node.js and Java converters:
   `miku-xlsx2md` `v1.3.0`, `miku-docx2md` `v1.2.1`,
@@ -89,6 +117,13 @@ Update this section while working. Do not rewrite unrelated TODO items.
   `skills/igapyon-miku-ms-office/runtime/`, update
   `references/runtime-policy.md`, `references/upstreams.md`, `index.json`, and
   the bundle content tests.
+
+#### Upstream Follow-up
+
+These items are owned by the upstream converter products. Keep them open here
+until the relevant upstream implementation or documentation change is released
+and the bundled runtimes have been refreshed and verified.
+
 - [ ] Upstream CLI behavior request: when no output option is specified, write a
   normal output file instead of requiring stdout-oriented usage. Define the
   default output path consistently for `miku-xlsx2md`, `miku-docx2md`, and
@@ -105,7 +140,10 @@ Update this section while working. Do not rewrite unrelated TODO items.
   `miku-docx2md` and `miku-pptx2md` print `<tool> <version>`, while
   `miku-xlsx2md`, `miku-md2xlsx`, `miku-md2docx`, and `miku-md2pptx` print only
   the version number. Ask upstream tool teams to decide and apply one
-  consistent format.
+  consistent format. Existing Office-to-Markdown tracking includes
+  [miku-xlsx2md #17](https://github.com/igapyon/miku-xlsx2md/issues/17),
+  [miku-docx2md #27](https://github.com/igapyon/miku-docx2md/issues/27), and
+  [miku-pptx2md #10](https://github.com/igapyon/miku-pptx2md/issues/10).
 - [ ] Upstream CLI help request: standardize `--help` usage examples so bundled
   single-file artifacts do not show source-tree commands such as
   `node scripts/...`, `npm run cli -- ...`, or `java -jar target/...` when they
@@ -124,7 +162,8 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Blockers
 
-- なし
+- なし。Word実機でのCompatibility Mode確認はリリース前の未実施確認で
+  あり、上流リリース待ちではない。
 
 ### Retry Log
 
