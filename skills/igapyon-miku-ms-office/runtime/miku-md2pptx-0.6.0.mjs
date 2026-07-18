@@ -4,7 +4,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path2 from "node:path";
-import { fileURLToPath as fileURLToPath2 } from "node:url";
 
 // dist/core.js
 import { default as default2 } from "node:path";
@@ -821,8 +820,8 @@ var VFile = class {
     if (typeof this.value === "string") {
       return this.value;
     }
-    const decoder = new TextDecoder(encoding || void 0);
-    return decoder.decode(this.value);
+    const decoder2 = new TextDecoder(encoding || void 0);
+    return decoder2.decode(this.value);
   }
 };
 function assertPart(part, name) {
@@ -11646,7 +11645,84 @@ function markdownToSlides(markdown, options = {}) {
   }
   return slides;
 }
-var encoder = new TextEncoder();
+var textEncoder = new TextEncoder();
+var textDecoder = new TextDecoder();
+function readUint16(data, offset) {
+  return data[offset] | data[offset + 1] << 8;
+}
+function readUint32(data, offset) {
+  return (data[offset] | data[offset + 1] << 8 | data[offset + 2] << 16 | data[offset + 3] << 24) >>> 0;
+}
+function writeUint16(buffer, offset, value) {
+  buffer[offset] = value & 255;
+  buffer[offset + 1] = value >>> 8 & 255;
+}
+function writeUint32(buffer, offset, value) {
+  buffer[offset] = value & 255;
+  buffer[offset + 1] = value >>> 8 & 255;
+  buffer[offset + 2] = value >>> 16 & 255;
+  buffer[offset + 3] = value >>> 24 & 255;
+}
+function concatBytes(parts) {
+  const total = parts.reduce((sum, part) => sum + part.length, 0);
+  const output = new Uint8Array(total);
+  let offset = 0;
+  for (const part of parts) {
+    output.set(part, offset);
+    offset += part.length;
+  }
+  return output;
+}
+function asBytes(data) {
+  return typeof data === "string" ? textEncoder.encode(data) : data;
+}
+function createDiagnostic(severity, code3, message, path22) {
+  return path22 === void 0 ? { severity, code: code3, message } : { severity, code: code3, message, path: path22 };
+}
+function normalizeOpcPartPath(partPath) {
+  const withoutHash = partPath.split("#", 1)[0] ?? "";
+  const raw = withoutHash.replace(/\\/g, "/").replace(/^\/+/, "");
+  const parts = [];
+  for (const part of raw.split("/")) {
+    if (part === "" || part === ".") {
+      continue;
+    }
+    if (part === "..") {
+      if (parts.length === 0) {
+        throw new Error(`OPC part path escapes package root: ${partPath}`);
+      }
+      parts.pop();
+      continue;
+    }
+    parts.push(part);
+  }
+  if (parts.length === 0) {
+    throw new Error(`OPC part path is empty: ${partPath}`);
+  }
+  return parts.join("/");
+}
+function compareOpcPartPaths(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function escapeXmlText(value) {
+  return sanitizeXmlText(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function escapeXmlAttribute(value) {
+  return escapeXmlText(value).replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+function sanitizeXmlText(value) {
+  return value.replace(
+    /[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu,
+    ""
+  );
+}
+function buildOpcRelationshipsXml(relationships) {
+  const rels = relationships.map((relationship) => {
+    const targetMode = relationship.targetMode === void 0 ? "" : ` TargetMode="${escapeXmlAttribute(relationship.targetMode)}"`;
+    return `<Relationship Id="${escapeXmlAttribute(relationship.id)}" Type="${escapeXmlAttribute(relationship.type)}" Target="${escapeXmlAttribute(relationship.target)}"${targetMode}/>`;
+  }).join("");
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels}</Relationships>`;
+}
 var crcTable = new Uint32Array(256);
 for (let i = 0; i < 256; i += 1) {
   let c = i;
@@ -11662,84 +11738,244 @@ function crc32(data) {
   }
   return (crc ^ 4294967295) >>> 0;
 }
-function asBytes(data) {
-  return typeof data === "string" ? encoder.encode(data) : data;
-}
-function writeUint16(buffer, offset, value) {
-  buffer[offset] = value & 255;
-  buffer[offset + 1] = value >>> 8 & 255;
-}
-function writeUint32(buffer, offset, value) {
-  buffer[offset] = value & 255;
-  buffer[offset + 1] = value >>> 8 & 255;
-  buffer[offset + 2] = value >>> 16 & 255;
-  buffer[offset + 3] = value >>> 24 & 255;
-}
-function concat(parts) {
-  const total = parts.reduce((sum, part) => sum + part.length, 0);
-  const output = new Uint8Array(total);
-  let offset = 0;
-  for (const part of parts) {
-    output.set(part, offset);
-    offset += part.length;
+var EOCD_SIGNATURE = 101010256;
+var CENTRAL_DIRECTORY_SIGNATURE = 33639248;
+var LOCAL_FILE_SIGNATURE = 67324752;
+var ZIP_GENERAL_PURPOSE_FLAG_UTF8 = 2048;
+var FIXED_TIMESTAMP = new Date(Date.UTC(1980, 0, 1, 0, 0, 0));
+function readZipPackage(data) {
+  const diagnostics = [];
+  const entries = [];
+  const centralDirectory = readCentralDirectory(data, diagnostics);
+  for (const central of centralDirectory) {
+    try {
+      const compressed = readZipEntryCompressedData(data, central);
+      const entryData = central.method === 0 ? compressed : getNodeZlib().inflateRawSync(compressed);
+      entries.push(buildZipEntry(central, entryData));
+    } catch (error) {
+      diagnostics.push(
+        createDiagnostic(
+          "error",
+          "zip.entry.read_failed",
+          error instanceof Error ? error.message : String(error),
+          central.path
+        )
+      );
+    }
   }
-  return output;
+  return { entries, diagnostics };
 }
-function createZip(entries) {
+function writeZipPackage(entries, options = {}) {
+  const order2 = options.order ?? "stable";
+  const prepared = prepareZipEntries(entries, options);
+  if (order2 === "stable") {
+    prepared.sort((a, b) => compareOpcPartPaths(a.path, b.path));
+  }
   const localParts = [];
   const centralParts = [];
   let offset = 0;
-  for (const entry of entries) {
-    const nameBytes = encoder.encode(entry.path);
-    const data = asBytes(entry.data);
-    const crc = crc32(data);
-    const localHeader = new Uint8Array(30 + nameBytes.length);
-    writeUint32(localHeader, 0, 67324752);
-    writeUint16(localHeader, 4, 20);
-    writeUint16(localHeader, 6, 2048);
-    writeUint16(localHeader, 8, 0);
-    writeUint16(localHeader, 10, 0);
-    writeUint16(localHeader, 12, 0);
-    writeUint32(localHeader, 14, crc);
-    writeUint32(localHeader, 18, data.length);
-    writeUint32(localHeader, 22, data.length);
-    writeUint16(localHeader, 26, nameBytes.length);
-    writeUint16(localHeader, 28, 0);
-    localHeader.set(nameBytes, 30);
-    localParts.push(localHeader, data);
-    const centralHeader = new Uint8Array(46 + nameBytes.length);
-    writeUint32(centralHeader, 0, 33639248);
-    writeUint16(centralHeader, 4, 20);
-    writeUint16(centralHeader, 6, 20);
-    writeUint16(centralHeader, 8, 2048);
-    writeUint16(centralHeader, 10, 0);
-    writeUint16(centralHeader, 12, 0);
-    writeUint16(centralHeader, 14, 0);
-    writeUint32(centralHeader, 16, crc);
-    writeUint32(centralHeader, 20, data.length);
-    writeUint32(centralHeader, 24, data.length);
-    writeUint16(centralHeader, 28, nameBytes.length);
-    writeUint16(centralHeader, 30, 0);
-    writeUint16(centralHeader, 32, 0);
-    writeUint16(centralHeader, 34, 0);
-    writeUint16(centralHeader, 36, 0);
-    writeUint32(centralHeader, 38, 0);
-    writeUint32(centralHeader, 42, offset);
-    centralHeader.set(nameBytes, 46);
-    centralParts.push(centralHeader);
-    offset += localHeader.length + data.length;
+  for (const entry of prepared) {
+    const serialized = serializeZipEntry(entry, offset, options.compressionLevel);
+    localParts.push(serialized.localHeader, serialized.compressed);
+    centralParts.push(serialized.centralHeader);
+    offset += serialized.localHeader.length + serialized.compressed.length;
   }
-  const centralDirectory = concat(centralParts);
+  const centralDirectory = concatBytes(centralParts);
+  const end = buildEndOfCentralDirectory(prepared.length, centralDirectory.length, offset);
+  return concatBytes([...localParts, centralDirectory, end]);
+}
+function prepareZipEntries(entries, options) {
+  const timestamp = options.timestamp ?? FIXED_TIMESTAMP;
+  const compression = options.compression ?? "store";
+  return entries.map((entry) => ({
+    path: normalizeOpcPartPath(entry.path),
+    data: asBytes(entry.data),
+    compression: entry.compression ?? compression,
+    modifiedAt: entry.modifiedAt ?? timestamp
+  }));
+}
+function serializeZipEntry(entry, localHeaderOffset, compressionLevel) {
+  const nameBytes = textEncoder.encode(entry.path);
+  const method = entry.compression === "store" ? 0 : 8;
+  const compressed = compressZipEntryData(entry, compressionLevel);
+  const crc = crc32(entry.data);
+  const dosTime = toDosTime(entry.modifiedAt);
+  const dosDate = toDosDate(entry.modifiedAt);
+  return {
+    localHeader: buildLocalFileHeader(entry, nameBytes, method, compressed.length, crc, dosTime, dosDate),
+    centralHeader: buildCentralDirectoryHeader(
+      entry,
+      nameBytes,
+      method,
+      compressed.length,
+      crc,
+      dosTime,
+      dosDate,
+      localHeaderOffset
+    ),
+    compressed
+  };
+}
+function compressZipEntryData(entry, compressionLevel) {
+  return entry.compression === "store" ? entry.data : new Uint8Array(getNodeZlib().deflateRawSync(entry.data, { level: compressionLevel ?? 9 }));
+}
+function buildLocalFileHeader(entry, nameBytes, method, compressedSize, crc, dosTime, dosDate) {
+  const localHeader = new Uint8Array(30 + nameBytes.length);
+  writeUint32(localHeader, 0, LOCAL_FILE_SIGNATURE);
+  writeUint16(localHeader, 4, 20);
+  writeUint16(localHeader, 6, ZIP_GENERAL_PURPOSE_FLAG_UTF8);
+  writeUint16(localHeader, 8, method);
+  writeUint16(localHeader, 10, dosTime);
+  writeUint16(localHeader, 12, dosDate);
+  writeUint32(localHeader, 14, crc);
+  writeUint32(localHeader, 18, compressedSize);
+  writeUint32(localHeader, 22, entry.data.length);
+  writeUint16(localHeader, 26, nameBytes.length);
+  writeUint16(localHeader, 28, 0);
+  localHeader.set(nameBytes, 30);
+  return localHeader;
+}
+function buildCentralDirectoryHeader(entry, nameBytes, method, compressedSize, crc, dosTime, dosDate, localHeaderOffset) {
+  const centralHeader = new Uint8Array(46 + nameBytes.length);
+  writeUint32(centralHeader, 0, CENTRAL_DIRECTORY_SIGNATURE);
+  writeUint16(centralHeader, 4, 20);
+  writeUint16(centralHeader, 6, 20);
+  writeUint16(centralHeader, 8, ZIP_GENERAL_PURPOSE_FLAG_UTF8);
+  writeUint16(centralHeader, 10, method);
+  writeUint16(centralHeader, 12, dosTime);
+  writeUint16(centralHeader, 14, dosDate);
+  writeUint32(centralHeader, 16, crc);
+  writeUint32(centralHeader, 20, compressedSize);
+  writeUint32(centralHeader, 24, entry.data.length);
+  writeUint16(centralHeader, 28, nameBytes.length);
+  writeUint16(centralHeader, 30, 0);
+  writeUint16(centralHeader, 32, 0);
+  writeUint16(centralHeader, 34, 0);
+  writeUint16(centralHeader, 36, 0);
+  writeUint32(centralHeader, 38, 0);
+  writeUint32(centralHeader, 42, localHeaderOffset);
+  centralHeader.set(nameBytes, 46);
+  return centralHeader;
+}
+function buildEndOfCentralDirectory(entryCount, centralDirectorySize, centralDirectoryOffset) {
   const end = new Uint8Array(22);
-  writeUint32(end, 0, 101010256);
+  writeUint32(end, 0, EOCD_SIGNATURE);
   writeUint16(end, 4, 0);
   writeUint16(end, 6, 0);
-  writeUint16(end, 8, entries.length);
-  writeUint16(end, 10, entries.length);
-  writeUint32(end, 12, centralDirectory.length);
-  writeUint32(end, 16, offset);
+  writeUint16(end, 8, entryCount);
+  writeUint16(end, 10, entryCount);
+  writeUint32(end, 12, centralDirectorySize);
+  writeUint32(end, 16, centralDirectoryOffset);
   writeUint16(end, 20, 0);
-  return concat([...localParts, centralDirectory, end]);
+  return end;
+}
+function readZipEntryCompressedData(data, central) {
+  const localNameLength = readUint16(data, central.localHeaderOffset + 26);
+  const localExtraLength = readUint16(data, central.localHeaderOffset + 28);
+  const dataStart = central.localHeaderOffset + 30 + localNameLength + localExtraLength;
+  return data.slice(dataStart, dataStart + central.compressedSize);
+}
+function buildZipEntry(central, entryData) {
+  return {
+    path: central.path,
+    data: new Uint8Array(entryData),
+    compression: central.method === 0 ? "store" : "deflate",
+    compressedSize: central.compressedSize,
+    uncompressedSize: central.uncompressedSize,
+    crc32: central.crc,
+    modifiedAt: central.modifiedAt
+  };
+}
+function readCentralDirectory(data, diagnostics) {
+  const eocdOffset = findEndOfCentralDirectory(data);
+  if (eocdOffset < 0) {
+    diagnostics.push(createDiagnostic("error", "zip.eocd.missing", "End of central directory was not found."));
+    return [];
+  }
+  const entryCount = readUint16(data, eocdOffset + 10);
+  const centralDirectoryOffset = readUint32(data, eocdOffset + 16);
+  const entries = [];
+  let offset = centralDirectoryOffset;
+  for (let index2 = 0; index2 < entryCount; index2 += 1) {
+    if (readUint32(data, offset) !== CENTRAL_DIRECTORY_SIGNATURE) {
+      diagnostics.push(createDiagnostic("error", "zip.central_directory.invalid", "Central directory entry signature is invalid."));
+      break;
+    }
+    const flags = readUint16(data, offset + 8);
+    const method = readUint16(data, offset + 10);
+    const time = readUint16(data, offset + 12);
+    const date = readUint16(data, offset + 14);
+    const crc = readUint32(data, offset + 16);
+    const compressedSize = readUint32(data, offset + 20);
+    const uncompressedSize = readUint32(data, offset + 24);
+    const fileNameLength = readUint16(data, offset + 28);
+    const extraLength = readUint16(data, offset + 30);
+    const commentLength = readUint16(data, offset + 32);
+    const localHeaderOffset = readUint32(data, offset + 42);
+    const nameStart = offset + 46;
+    const path22 = textDecoder.decode(data.slice(nameStart, nameStart + fileNameLength));
+    if (method !== 0 && method !== 8) {
+      diagnostics.push(createDiagnostic("error", "zip.compression.unsupported", `Unsupported ZIP compression method: ${method}`, path22));
+    } else {
+      entries.push({
+        path: normalizeOpcPartPath(path22),
+        method,
+        flags,
+        crc,
+        compressedSize,
+        uncompressedSize,
+        localHeaderOffset,
+        modifiedAt: fromDosDateTime(date, time)
+      });
+    }
+    offset = nameStart + fileNameLength + extraLength + commentLength;
+  }
+  return entries;
+}
+function findEndOfCentralDirectory(data) {
+  const minOffset = Math.max(0, data.length - 65535 - 22);
+  for (let offset = data.length - 22; offset >= minOffset; offset -= 1) {
+    if (readUint32(data, offset) === EOCD_SIGNATURE) {
+      return offset;
+    }
+  }
+  return -1;
+}
+function toDosTime(date) {
+  return date.getUTCHours() << 11 | date.getUTCMinutes() << 5 | Math.floor(date.getUTCSeconds() / 2);
+}
+function toDosDate(date) {
+  const year = Math.max(1980, date.getUTCFullYear());
+  return year - 1980 << 9 | date.getUTCMonth() + 1 << 5 | date.getUTCDate();
+}
+function fromDosDateTime(date, time) {
+  const year = 1980 + (date >>> 9 & 127);
+  const month = date >>> 5 & 15;
+  const day = date & 31;
+  const hour = time >>> 11 & 31;
+  const minute = time >>> 5 & 63;
+  const second = (time & 31) * 2;
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+}
+function getNodeZlib() {
+  const runtime = globalThis;
+  const getBuiltinModule = runtime.process?.getBuiltinModule;
+  const zlib = typeof getBuiltinModule === "function" ? getBuiltinModule("node:zlib") ?? getBuiltinModule("zlib") : void 0;
+  if (zlib !== void 0 && typeof zlib.deflateRawSync === "function" && typeof zlib.inflateRawSync === "function") {
+    return zlib;
+  }
+  throw new Error("Node zlib is required for synchronous ZIP deflate operations. Use stored entries, readZipPackageAsync with DecompressionStream, or inject an async inflater.");
+}
+function createZip(entries) {
+  return writeZipPackage(entries);
+}
+function readZipEntries(data) {
+  const result = readZipPackage(data);
+  const error = result.diagnostics.find((diagnostic) => diagnostic.severity === "error");
+  if (error) {
+    throw new Error(`Template PPTX is not a readable ZIP package: ${error.message}`);
+  }
+  return new Map(result.entries.map((entry) => [entry.path, entry.data]));
 }
 function collectDiagnostics(slides, options) {
   const diagnostics = [];
@@ -11766,8 +12002,9 @@ function normalizeImageExtension(image2) {
   }
   return "png";
 }
-function createMediaManager(options, diagnostics) {
+function createMediaManager(options, diagnostics, startImageIndex = 1) {
   const entries = [];
+  let nextImageIndex = startImageIndex;
   return {
     entries,
     addImage(image2) {
@@ -11782,7 +12019,8 @@ function createMediaManager(options, diagnostics) {
         return void 0;
       }
       const extension2 = normalizeImageExtension(resolved);
-      const fileName = `image${entries.length + 1}.${extension2}`;
+      const fileName = `image${nextImageIndex}.${extension2}`;
+      nextImageIndex += 1;
       const packagePath = `ppt/media/${fileName}`;
       entries.push({ path: packagePath, data: resolved.bytes });
       return {
@@ -11797,7 +12035,7 @@ var PRESENTATION_NS = "http://schemas.openxmlformats.org/presentationml/2006/mai
 var REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 var DRAWING_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
 function xmlEscape(value) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return escapeXmlAttribute(value);
 }
 function createHyperlinkRel(relationships, href) {
   const existing = relationships.find((rel) => rel.target === href && rel.type.endsWith("/hyperlink"));
@@ -11823,10 +12061,7 @@ function createImageRel(relationships, target) {
   return id;
 }
 function relsXml(relationships) {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-${relationships.map((rel) => `  <Relationship Id="${rel.id}" Type="${rel.type}" Target="${xmlEscape(rel.target)}"${rel.targetMode ? ` TargetMode="${rel.targetMode}"` : ""}/>`).join("\n")}
-</Relationships>`;
+  return buildOpcRelationshipsXml(relationships);
 }
 function slideMasterXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -11843,8 +12078,23 @@ function slideMasterXml() {
 }
 function slideLayoutXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<p:sldLayout xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}" type="blank" preserve="1">
-  <p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr></p:spTree></p:cSld>
+<p:sldLayout xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}" type="obj" preserve="1">
+  <p:cSld name="Title and Content">
+    <p:spTree>
+      <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+      <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="Title Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="685800" y="457200"/><a:ext cx="7772400" cy="914400"/></a:xfrm></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="3" name="Content Placeholder"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body"/></p:nvPr></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="685800" y="1600200"/><a:ext cx="7772400" cy="4572000"/></a:xfrm></p:spPr>
+        <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody>
+      </p:sp>
+    </p:spTree>
+  </p:cSld>
   <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:sldLayout>`;
 }
@@ -11921,6 +12171,185 @@ function tableStylesXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <a:tblStyleLst xmlns:a="${DRAWING_NS}" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`;
 }
+var decoder = new TextDecoder();
+function readTextEntry(entries, path22) {
+  const data = entries.get(path22);
+  return data ? decoder.decode(data) : void 0;
+}
+function getAttribute(tag, localName) {
+  const pattern = new RegExp(`(?:^|\\s)(?:[^\\s:=]+:)?${localName}="([^"]*)"`);
+  return tag.match(pattern)?.[1];
+}
+function normalizePackagePath(baseDir, target) {
+  const parts = `${baseDir}/${target}`.split("/");
+  const normalized = [];
+  for (const part of parts) {
+    if (!part || part === ".") {
+      continue;
+    }
+    if (part === "..") {
+      normalized.pop();
+      continue;
+    } else {
+      normalized.push(part);
+    }
+  }
+  return normalized.join("/");
+}
+function collectRelationshipTargets(xml) {
+  return Array.from(xml.matchAll(/<[^<\s:]*:?Relationship\b[^>]*>/g), (match) => {
+    const tag = match[0];
+    return {
+      id: getAttribute(tag, "Id") || "",
+      type: getAttribute(tag, "Type") || "",
+      target: getAttribute(tag, "Target") || "",
+      ...getAttribute(tag, "TargetMode") === "External" ? { targetMode: "External" } : {}
+    };
+  }).filter((rel) => rel.id && rel.type && rel.target);
+}
+function collectTagBlocks(xml, localName) {
+  const pattern = new RegExp(`<[^<\\s:]*:?${localName}\\b[\\s\\S]*?<\\/[^<\\s:]*:?${localName}>`, "g");
+  return Array.from(xml.matchAll(pattern), (match) => match[0]);
+}
+function getPlaceholderTag(shapeXml) {
+  return shapeXml.match(/<[^<\s:]*:?ph\b[^>]*\/?>/)?.[0];
+}
+function findPlaceholderTag(xml, types) {
+  for (const shapeXml of collectTagBlocks(xml, "sp")) {
+    const placeholder = getPlaceholderTag(shapeXml);
+    if (!placeholder) {
+      continue;
+    }
+    const type = getAttribute(placeholder, "type") || "body";
+    if (types.includes(type)) {
+      return placeholder.endsWith("/>") ? placeholder : `${placeholder.slice(0, -1)}/>`;
+    }
+  }
+  return void 0;
+}
+function getPlaceholderType(placeholderXml) {
+  return getAttribute(placeholderXml, "type") || "body";
+}
+function findPlaceholderShape(xml, placeholderXml) {
+  const targetIdx = getAttribute(placeholderXml, "idx");
+  const targetType = getPlaceholderType(placeholderXml);
+  for (const shapeXml of collectTagBlocks(xml, "sp")) {
+    const candidate = getPlaceholderTag(shapeXml);
+    if (!candidate) {
+      continue;
+    }
+    const candidateIdx = getAttribute(candidate, "idx");
+    const candidateType = getPlaceholderType(candidate);
+    if (targetIdx && candidateIdx === targetIdx) {
+      return shapeXml;
+    }
+    if (!targetIdx && candidateType === targetType) {
+      return shapeXml;
+    }
+    if (targetType === "body" && candidateType === "obj") {
+      return shapeXml;
+    }
+  }
+  return void 0;
+}
+function extractShapeRect(shapeXml) {
+  const xfrm = shapeXml.match(/<[^<\s:]*:?xfrm\b[\s\S]*?<\/[^<\s:]*:?xfrm>/)?.[0];
+  if (!xfrm) {
+    return void 0;
+  }
+  const offTag = xfrm.match(/<[^<\s:]*:?off\b[^>]*>/)?.[0];
+  const extTag = xfrm.match(/<[^<\s:]*:?ext\b[^>]*>/)?.[0];
+  const x = offTag ? Number(getAttribute(offTag, "x")) : NaN;
+  const y = offTag ? Number(getAttribute(offTag, "y")) : NaN;
+  const cx = extTag ? Number(getAttribute(extTag, "cx")) : NaN;
+  const cy = extTag ? Number(getAttribute(extTag, "cy")) : NaN;
+  return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(cx) && Number.isFinite(cy) ? { x, y, cx, cy } : void 0;
+}
+function findPlaceholderRect(entries, layoutPath, layoutXml, placeholderXml) {
+  const layoutShape = findPlaceholderShape(layoutXml, placeholderXml);
+  const layoutRect = layoutShape ? extractShapeRect(layoutShape) : void 0;
+  if (layoutRect) {
+    return layoutRect;
+  }
+  const relsPath = layoutPath.replace("ppt/slideLayouts/", "ppt/slideLayouts/_rels/") + ".rels";
+  const relsXml2 = readTextEntry(entries, relsPath);
+  const masterRel = relsXml2 ? collectRelationshipTargets(relsXml2).find((rel) => rel.type.endsWith("/slideMaster")) : void 0;
+  if (!masterRel) {
+    return void 0;
+  }
+  const masterPath = normalizePackagePath("ppt/slideLayouts", masterRel.target);
+  const masterXml = readTextEntry(entries, masterPath);
+  if (!masterXml) {
+    return void 0;
+  }
+  const masterShape = findPlaceholderShape(masterXml, placeholderXml);
+  return masterShape ? extractShapeRect(masterShape) : void 0;
+}
+function getLayoutName(xml, layoutPath) {
+  const tag = xml.match(/<[^<\s:]*:?sldLayout\b[^>]*>/)?.[0];
+  return tag ? getAttribute(tag, "name") || layoutPath.split("/").pop() || layoutPath : layoutPath;
+}
+function findTemplateLayout(entries) {
+  const layouts = Array.from(entries.keys()).filter((path22) => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(path22));
+  let titleOnly;
+  for (const path22 of layouts) {
+    const xml = readTextEntry(entries, path22);
+    if (!xml) {
+      continue;
+    }
+    const titlePlaceholderXml = findPlaceholderTag(xml, ["title", "ctrTitle"]);
+    const bodyPlaceholderXml = findPlaceholderTag(xml, ["body", "obj"]);
+    const layout = {
+      path: path22,
+      name: getLayoutName(xml, path22),
+      titlePlaceholderXml: titlePlaceholderXml || '<p:ph type="title"/>',
+      bodyPlaceholderXml: bodyPlaceholderXml || '<p:ph type="body"/>',
+      reason: bodyPlaceholderXml ? "found title and body placeholders" : "found title placeholder only"
+    };
+    if (titlePlaceholderXml && bodyPlaceholderXml) {
+      return layout;
+    }
+    if (titlePlaceholderXml && !titleOnly) {
+      titleOnly = layout;
+    }
+  }
+  return titleOnly;
+}
+function nextTemplateImageIndex(entries) {
+  let maxIndex = 0;
+  for (const path22 of entries.keys()) {
+    const match = path22.match(/^ppt\/media\/image(\d+)\.(?:png|jpe?g|gif)$/i);
+    if (match) {
+      maxIndex = Math.max(maxIndex, Number(match[1]));
+    }
+  }
+  return maxIndex + 1;
+}
+function createTemplateContext(templatePptx) {
+  const entries = readZipEntries(templatePptx);
+  const presentationXml2 = readTextEntry(entries, "ppt/presentation.xml");
+  const presentationRelsXml = readTextEntry(entries, "ppt/_rels/presentation.xml.rels");
+  if (!presentationXml2 || !presentationRelsXml) {
+    throw new Error("Template PPTX does not contain required presentation parts.");
+  }
+  const selected = findTemplateLayout(entries);
+  if (!selected) {
+    return void 0;
+  }
+  return {
+    entries,
+    layoutPath: selected.path,
+    layoutName: selected.name,
+    layoutTarget: `../slideLayouts/${selected.path.split("/").pop()}`,
+    titlePlaceholderXml: selected.titlePlaceholderXml,
+    bodyPlaceholderXml: selected.bodyPlaceholderXml,
+    bodyPlaceholderRect: findPlaceholderRect(entries, selected.path, readTextEntry(entries, selected.path) || "", selected.bodyPlaceholderXml),
+    reason: selected.reason,
+    presentationXml: presentationXml2,
+    presentationRelsXml,
+    nextImageIndex: nextTemplateImageIndex(entries)
+  };
+}
 function parseListRuns(runs) {
   const text5 = runs.map((run) => run.text).join("");
   const match = text5.match(/^(\s*)-\s+(.*)$/);
@@ -11945,31 +12374,37 @@ function parseListRuns(runs) {
     level: Math.min(8, Math.floor(match[1].length / 2))
   };
 }
-function textRunXml(run, index2, relationships) {
+function textRunXml(run, index2, relationships, explicitFontSize) {
   const relId = run.href ? createHyperlinkRel(relationships, run.href) : void 0;
   const hyperlink = relId ? `<a:hlinkClick r:id="${relId}"/>` : "";
-  return `<a:r><a:rPr lang="en-US" sz="${index2 === 0 ? 2400 : 1800}">${hyperlink}</a:rPr><a:t>${xmlEscape(run.text)}</a:t></a:r>`;
+  const fontSize = explicitFontSize ? ` sz="${index2 === 0 ? 2400 : 1800}"` : "";
+  return `<a:r><a:rPr lang="en-US"${fontSize}>${hyperlink}</a:rPr><a:t>${xmlEscape(run.text)}</a:t></a:r>`;
 }
-function textParagraphFromRuns(runs, index2, relationships) {
+function textParagraphFromRuns(runs, index2, relationships, explicitFontSize = true) {
   const parsed = parseListRuns(runs);
   const pPr = parsed.bullet ? `<a:pPr${parsed.level > 0 ? ` lvl="${parsed.level}"` : ""}><a:buChar char="\u2022"/></a:pPr>` : "";
-  const body = parsed.runs.length > 0 ? parsed.runs.map((run) => textRunXml(run, index2, relationships)).join("") : textRunXml({ text: " " }, index2, relationships);
+  const body = parsed.runs.length > 0 ? parsed.runs.map((run) => textRunXml(run, index2, relationships, explicitFontSize)).join("") : textRunXml({ text: " " }, index2, relationships, explicitFontSize);
   return `<a:p>${pPr}${body}<a:endParaRPr lang="en-US"/></a:p>`;
 }
-function textParagraph(text5, index2, relationships) {
-  return textParagraphFromRuns([{ text: text5 }], index2, relationships);
+function textParagraph(text5, index2, relationships, explicitFontSize = true) {
+  return textParagraphFromRuns([{ text: text5 }], index2, relationships, explicitFontSize);
 }
-function tableXml(rows, id, relationships) {
+function tableXml(rows, id, relationships, explicitFontSize, bodyRect, precedingTextBlockCount = 0) {
   const columnCount = Math.max(1, ...rows.map((row) => row.length));
   const normalizedRows = rows.length > 0 ? rows : [[{ text: "", runs: [] }]];
   const gridColumns = Array.from({ length: columnCount }, () => '<a:gridCol w="1828800"/>').join("");
+  const tableHeight = Math.max(74e4, normalizedRows.length * 370840);
+  const tableWidth = bodyRect ? Math.min(bodyRect.cx, Math.max(36e5, Math.floor(bodyRect.cx * 0.55))) : 7772400;
+  const tableX = bodyRect?.x ?? 685800;
+  const textOffset = precedingTextBlockCount > 0 ? Math.min(bodyRect ? Math.max(0, bodyRect.cy - tableHeight) : 2e6, 3e5 + precedingTextBlockCount * 52e4) : 0;
+  const tableY = (bodyRect?.y ?? 2743200) + textOffset;
   const tableRowsXml = normalizedRows.map((row) => {
     const cells = Array.from({ length: columnCount }, (_, index2) => row[index2] ?? { text: "", runs: [] });
-    return `<a:tr h="370840">${cells.map((cell) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${textParagraphFromRuns(cell.runs.length > 0 ? cell.runs : [{ text: cell.text }], 1, relationships)}</a:txBody><a:tcPr/></a:tc>`).join("")}</a:tr>`;
+    return `<a:tr h="370840">${cells.map((cell) => `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/>${textParagraphFromRuns(cell.runs.length > 0 ? cell.runs : [{ text: cell.text }], 1, relationships, explicitFontSize)}</a:txBody><a:tcPr/></a:tc>`).join("")}</a:tr>`;
   }).join("");
   return `<p:graphicFrame>
         <p:nvGraphicFramePr><p:cNvPr id="${id}" name="Table ${id}"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>
-        <p:xfrm><a:off x="685800" y="2743200"/><a:ext cx="7772400" cy="1828800"/></p:xfrm>
+        <p:xfrm><a:off x="${tableX}" y="${tableY}"/><a:ext cx="${tableWidth}" cy="${tableHeight}"/></p:xfrm>
         <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${gridColumns}</a:tblGrid>${tableRowsXml}</a:tbl></a:graphicData></a:graphic>
       </p:graphicFrame>`;
 }
@@ -12005,16 +12440,20 @@ function notesXml(slide) {
   <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
 </p:notes>`;
 }
-function slideXml(slide, index2, media) {
+function slideXml(slide, index2, media, layoutTarget = "../slideLayouts/slideLayout1.xml", explicitFontSize = true, placeholders) {
   const relationships = [{
     id: "rId1",
     type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-    target: "../slideLayouts/slideLayout1.xml"
+    target: layoutTarget
   }];
   const textBlocks = slide.blocks.filter((block) => block.kind === "text");
   const tableBlocks = slide.blocks.filter((block) => block.kind === "table");
   const imageBlocks = slide.blocks.filter((block) => block.kind === "image");
   const bodyBlocks = textBlocks.length > 0 ? textBlocks : [{ kind: "text", text: " ", runs: [{ text: " " }] }];
+  const titlePlaceholder = placeholders?.title ?? '<p:ph type="title"/>';
+  const bodyPlaceholder = placeholders?.body ?? '<p:ph type="body"/>';
+  const titleShapePr = placeholders ? "<p:spPr/>" : '<p:spPr><a:xfrm><a:off x="685800" y="457200"/><a:ext cx="7772400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>';
+  const bodyShapePr = placeholders ? "<p:spPr/>" : '<p:spPr><a:xfrm><a:off x="685800" y="1600200"/><a:ext cx="7772400" cy="4572000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>';
   if (slide.notes.length > 0) {
     relationships.push({
       id: `rId${relationships.length + 1}`,
@@ -12037,16 +12476,16 @@ function slideXml(slide, index2, media) {
       <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
       <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
       <p:sp>
-        <p:nvSpPr><p:cNvPr id="2" name="Title ${index2}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>
-        <p:spPr><a:xfrm><a:off x="685800" y="457200"/><a:ext cx="7772400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
-        <p:txBody><a:bodyPr/><a:lstStyle/>${textParagraph(slide.title, 0, relationships)}</p:txBody>
+        <p:nvSpPr><p:cNvPr id="2" name="Title ${index2}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr>${titlePlaceholder}</p:nvPr></p:nvSpPr>
+        ${titleShapePr}
+        <p:txBody><a:bodyPr/><a:lstStyle/>${textParagraph(slide.title, 0, relationships, explicitFontSize)}</p:txBody>
       </p:sp>
       <p:sp>
-        <p:nvSpPr><p:cNvPr id="3" name="Body ${index2}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="body"/></p:nvPr></p:nvSpPr>
-        <p:spPr><a:xfrm><a:off x="685800" y="1600200"/><a:ext cx="7772400" cy="4572000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
-        <p:txBody><a:bodyPr wrap="square"/><a:lstStyle/>${bodyBlocks.map((block, lineIndex) => textParagraphFromRuns(block.runs, lineIndex + 1, relationships)).join("")}</p:txBody>
+        <p:nvSpPr><p:cNvPr id="3" name="Body ${index2}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr>${bodyPlaceholder}</p:nvPr></p:nvSpPr>
+        ${bodyShapePr}
+        <p:txBody><a:bodyPr wrap="square"/><a:lstStyle/>${bodyBlocks.map((block, lineIndex) => textParagraphFromRuns(block.runs, lineIndex + 1, relationships, explicitFontSize)).join("")}</p:txBody>
       </p:sp>
-      ${tableBlocks.map((block, tableIndex) => tableXml(block.rows, 4 + tableIndex, relationships)).join("\n")}
+      ${tableBlocks.map((block, tableIndex) => tableXml(block.rows, 4 + tableIndex, relationships, explicitFontSize, placeholders?.bodyRect, textBlocks.length + tableIndex)).join("\n")}
       ${imageXml}
     </p:spTree>
   </p:cSld>
@@ -12103,12 +12542,114 @@ ${notesMasterOverride}
 ${notesSupportOverrides}
 </Types>`;
 }
+function extractXmlBlock(xml, localName) {
+  return xml.match(new RegExp(`<[^<\\s:]*:?${localName}\\b[\\s\\S]*?<\\/[^<\\s:]*:?${localName}>`))?.[0];
+}
+function extractXmlSelfClosing(xml, localName) {
+  return xml.match(new RegExp(`<[^<\\s:]*:?${localName}\\b[^>]*/>`))?.[0];
+}
+function templatePresentationXml(slides, template) {
+  const hasNotes = slides.some((slide) => slide.notes.length > 0);
+  const masterIds = extractXmlBlock(template.presentationXml, "sldMasterIdLst") || '<p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst>';
+  const slideSize = extractXmlSelfClosing(template.presentationXml, "sldSz") || '<p:sldSz cx="9144000" cy="6858000" type="screen4x3"/>';
+  const notesSize = extractXmlSelfClosing(template.presentationXml, "notesSz") || '<p:notesSz cx="6858000" cy="9144000"/>';
+  const defaultTextStyle = extractXmlBlock(template.presentationXml, "defaultTextStyle") || "";
+  const notesMasterIdList = hasNotes ? extractXmlBlock(template.presentationXml, "notesMasterIdLst") || '<p:notesMasterIdLst><p:notesMasterId r:id="rIdGeneratedNotesMaster"/></p:notesMasterIdLst>' : "";
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:a="${DRAWING_NS}" xmlns:r="${REL_NS}" xmlns:p="${PRESENTATION_NS}">
+  ${masterIds}
+  ${notesMasterIdList}
+  <p:sldIdLst>
+${slides.map((_, index2) => `    <p:sldId id="${256 + index2}" r:id="rIdGeneratedSlide${index2 + 1}"/>`).join("\n")}
+  </p:sldIdLst>
+  ${slideSize}
+  ${notesSize}
+  ${defaultTextStyle}
+</p:presentation>`;
+}
+function templatePresentationRelsXml(slides, template) {
+  const baseRels = collectRelationshipTargets(template.presentationRelsXml).filter((rel) => !rel.type.endsWith("/slide") && !rel.type.endsWith("/notesSlide"));
+  const hasNotes = slides.some((slide) => slide.notes.length > 0);
+  if (hasNotes && !baseRels.some((rel) => rel.type.endsWith("/notesMaster"))) {
+    baseRels.push({
+      id: "rIdGeneratedNotesMaster",
+      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
+      target: "notesMasters/notesMaster1.xml"
+    });
+  }
+  const generatedRels = slides.map((_, index2) => ({
+    id: `rIdGeneratedSlide${index2 + 1}`,
+    type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+    target: `slides/slide${index2 + 1}.xml`
+  }));
+  return relsXml([...baseRels, ...generatedRels]);
+}
+function templateContentTypesXml(slides, template) {
+  const existing = readTextEntry(template.entries, "[Content_Types].xml");
+  if (!existing) {
+    return contentTypes(slides);
+  }
+  const withoutGenerated = existing.replace(/\s*<Override\b[^>]*PartName="\/ppt\/slides\/slide\d+\.xml"[^>]*\/>/g, "").replace(/\s*<Override\b[^>]*PartName="\/ppt\/notesSlides\/notesSlide\d+\.xml"[^>]*\/>/g, "").replace(/\s*<Override\b[^>]*PartName="\/docProps\/app\.xml"[^>]*\/>/g, "").replace(/\s*<Override\b[^>]*PartName="\/docProps\/core\.xml"[^>]*\/>/g, "");
+  const additions = [
+    '  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>',
+    '  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>',
+    ...Array.from(
+      { length: slides.length },
+      (_, index2) => `  <Override PartName="/ppt/slides/slide${index2 + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`
+    ),
+    ...slides.map((slide, index2) => slide.notes.length > 0 ? `  <Override PartName="/ppt/notesSlides/notesSlide${index2 + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>` : "").filter(Boolean)
+  ];
+  if (slides.some((slide) => slide.notes.length > 0) && !/PartName="\/ppt\/notesMasters\/notesMaster1\.xml"/.test(withoutGenerated)) {
+    additions.push('  <Override PartName="/ppt/notesMasters/notesMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"/>');
+  }
+  const additionXml = additions.join("\n");
+  return withoutGenerated.replace(/<\/Types>\s*$/, `${additionXml}
+</Types>`);
+}
+function shouldCopyTemplateEntry(path22) {
+  if (path22 === "[Content_Types].xml" || path22 === "ppt/presentation.xml" || path22 === "ppt/_rels/presentation.xml.rels") {
+    return false;
+  }
+  if (path22 === "docProps/app.xml" || path22 === "docProps/core.xml") {
+    return false;
+  }
+  if (/^ppt\/slides(?:\/|$)/.test(path22) || /^ppt\/notesSlides(?:\/|$)/.test(path22)) {
+    return false;
+  }
+  return true;
+}
+function createTemplateBaseEntries(slides, template, title) {
+  const copied = Array.from(template.entries, ([path22, data]) => ({ path: path22, data })).filter((entry) => shouldCopyTemplateEntry(entry.path));
+  return [
+    { path: "[Content_Types].xml", data: templateContentTypesXml(slides, template) },
+    ...copied,
+    { path: "docProps/app.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>miku-md2pptx</Application><Slides>${slides.length}</Slides></Properties>` },
+    { path: "docProps/core.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${xmlEscape(title)}</dc:title><dc:creator>miku-md2pptx</dc:creator></cp:coreProperties>` },
+    { path: "ppt/presentation.xml", data: templatePresentationXml(slides, template) },
+    { path: "ppt/_rels/presentation.xml.rels", data: templatePresentationRelsXml(slides, template) }
+  ];
+}
 function markdownToPptxResult(markdown, options = {}) {
   const slides = markdownToSlides(markdown, options);
   const diagnostics = collectDiagnostics(slides, options);
-  const media = createMediaManager(options, diagnostics);
+  const title = options.title ?? slides[0]?.title ?? "Markdown deck";
+  const template = options.templatePptx ? createTemplateContext(options.templatePptx) : void 0;
+  if (options.templatePptx && template) {
+    diagnostics.push({
+      severity: "info",
+      code: "template-layout-selected",
+      message: `Template layout selected: ${template.layoutName} (${template.layoutPath}); ${template.reason}.`
+    });
+  } else if (options.templatePptx && !template) {
+    diagnostics.push({
+      severity: "warning",
+      code: "template-layout-fallback",
+      message: "No template slide layout with a title placeholder was found; used the default generated layout."
+    });
+  }
+  const media = createMediaManager(options, diagnostics, template?.nextImageIndex);
   const hasNotes = slides.some((slide) => slide.notes.length > 0);
-  const entries = [
+  const entries = template ? createTemplateBaseEntries(slides, template, title) : [
     { path: "[Content_Types].xml", data: contentTypes(slides) },
     { path: "_rels/.rels", data: relsXml([
       { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", target: "ppt/presentation.xml" },
@@ -12116,7 +12657,7 @@ function markdownToPptxResult(markdown, options = {}) {
       { id: "rId3", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties", target: "docProps/app.xml" }
     ]) },
     { path: "docProps/app.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>miku-md2pptx</Application><Slides>${slides.length}</Slides></Properties>` },
-    { path: "docProps/core.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${xmlEscape(options.title ?? slides[0]?.title ?? "Markdown deck")}</dc:title><dc:creator>miku-md2pptx</dc:creator></cp:coreProperties>` },
+    { path: "docProps/core.xml", data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>${xmlEscape(title)}</dc:title><dc:creator>miku-md2pptx</dc:creator></cp:coreProperties>` },
     { path: "ppt/presentation.xml", data: presentationXml(slides) },
     { path: "ppt/_rels/presentation.xml.rels", data: relsXml([
       { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster", target: "slideMasters/slideMaster1.xml" },
@@ -12141,7 +12682,14 @@ function markdownToPptxResult(markdown, options = {}) {
     { path: "ppt/theme/theme1.xml", data: themeXml() }
   ];
   for (const [index2, slide] of slides.entries()) {
-    const slidePart = slideXml(slide, index2 + 1, media);
+    const slidePart = slideXml(
+      slide,
+      index2 + 1,
+      media,
+      template?.layoutTarget,
+      !template,
+      template ? { title: template.titlePlaceholderXml, body: template.bodyPlaceholderXml, bodyRect: template.bodyPlaceholderRect } : void 0
+    );
     entries.push({ path: `ppt/slides/slide${index2 + 1}.xml`, data: slidePart.xml });
     entries.push({ path: `ppt/slides/_rels/slide${index2 + 1}.xml.rels`, data: relsXml(slidePart.relationships) });
     if (slide.notes.length > 0) {
@@ -12149,18 +12697,23 @@ function markdownToPptxResult(markdown, options = {}) {
       entries.push({ path: `ppt/notesSlides/_rels/notesSlide${index2 + 1}.xml.rels`, data: notesSlideRelsXml(index2 + 1) });
     }
   }
+  const addEntryIfMissing = (entry) => {
+    if (!entries.some((existing) => existing.path === entry.path)) {
+      entries.push(entry);
+    }
+  };
   if (hasNotes) {
-    entries.push({ path: "ppt/notesMasters/notesMaster1.xml", data: notesMasterXml() });
-    entries.push({ path: "ppt/notesMasters/_rels/notesMaster1.xml.rels", data: relsXml([
+    addEntryIfMissing({ path: "ppt/notesMasters/notesMaster1.xml", data: notesMasterXml() });
+    addEntryIfMissing({ path: "ppt/notesMasters/_rels/notesMaster1.xml.rels", data: relsXml([
       { id: "rId1", type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", target: "../theme/theme2.xml" }
     ]) });
-    entries.push({ path: "ppt/theme/theme2.xml", data: themeXml() });
-    entries.push({ path: "ppt/presProps.xml", data: presPropsXml() });
-    entries.push({ path: "ppt/viewProps.xml", data: viewPropsXml() });
-    entries.push({ path: "ppt/tableStyles.xml", data: tableStylesXml() });
+    addEntryIfMissing({ path: "ppt/theme/theme2.xml", data: themeXml() });
+    addEntryIfMissing({ path: "ppt/presProps.xml", data: presPropsXml() });
+    addEntryIfMissing({ path: "ppt/viewProps.xml", data: viewPropsXml() });
+    addEntryIfMissing({ path: "ppt/tableStyles.xml", data: tableStylesXml() });
   }
   for (const entry of media.entries) {
-    entries.push(entry);
+    addEntryIfMissing(entry);
   }
   return {
     pptx: createZip(entries),
@@ -12171,7 +12724,7 @@ function markdownToPptxResult(markdown, options = {}) {
 // package.json
 var package_default = {
   name: "miku-md2pptx",
-  version: "0.2.2",
+  version: "0.6.0",
   private: true,
   type: "module",
   scripts: {
@@ -12203,36 +12756,66 @@ var package_default = {
 };
 
 // scripts/lib/cli-support.mjs
-var __filename = fileURLToPath2(import.meta.url);
-var __dirname = path2.dirname(__filename);
-var rootDir = path2.resolve(__dirname, "../..");
 function usage() {
   return `miku-md2pptx converts a Markdown file into a PowerPoint .pptx deck.
 
 Usage:
-  miku-md2pptx <input.md> --out <output.pptx>
+  miku-md2pptx <input.md> --out <output.pptx> [--template <template.pptx>]
   miku-md2pptx --help
   miku-md2pptx --version
 
 Options:
-  --out <path>       Output .pptx path.
-  --title <text>     Override the generated presentation title.
-  --help             Show this help.
-  --version          Show the package version.
+  --out <path>             Output .pptx path.
+  --template <path>        Use a PowerPoint template's design information and
+                           first title+body slide layout. Existing template
+                           slides are not copied.
+  --title <text>           Override the generated presentation title.
+  --help, -h               Show this help.
+  --version                Show the package version.
+
+Execution contract:
+  Input, output, template, and local image paths are processed locally. Relative
+  CLI paths are resolved from the current working directory.
+  The output parent directory is created when needed. An existing output file
+  is replaced without prompting.
+  On success, the command exits 0 and prints "Wrote <path>" to stdout.
+  Conversion diagnostics use "<severity>: <code>: <message>" on stderr. A
+  warning does not by itself make the command fail. Fatal errors use stderr and
+  a nonzero exit code.
+
+Template behavior:
+  --template reads slide size, theme, slide masters, slide layouts, and related
+  design parts from the template PPTX.
+  Generated output contains only slides created from the Markdown input.
+  Existing slides in the template are not copied, prepended, appended, or
+  edited.
+  Generated slides reference the first title+body/content layout found in the
+  template. If no such layout is found, the converter tries a title-only layout,
+  then falls back to the built-in generated layout with a diagnostic.
+  If the template PPTX cannot be read, conversion fails instead of silently
+  falling back.
+  Template mode is structural, not pixel-perfect. Tables, images, and dense
+  content may need final positioning in PowerPoint.
 
 Markdown handling notes:
   Heading level 1 and 2 blocks start new slides.
-  Paragraphs, lists, code blocks, and tables become simple editable slide text.
+  Paragraphs, lists, fenced code blocks, and simple tables become editable
+  PowerPoint content. Markdown links become external hyperlinks.
+  Relative PNG, JPEG, and GIF images under the input file's directory can be
+  embedded. Remote URLs, absolute paths, paths outside that directory, missing
+  files, and unsupported formats are skipped with a warning.
+  <!-- speaker-notes: text --> adds speaker notes to the current slide.
   The first implementation prioritizes structure and local generation over
   pixel-perfect PowerPoint layout.
 
 Examples:
   npm run cli -- ./sample.md --out ./sample.pptx
+  npm run cli -- ./sample.md --out ./sample.pptx --template ./template.pptx
   npm run cli -- ./sample.md --out ./sample.pptx --title "Project brief"
 `;
 }
 function parseArgs(args) {
-  const options = { input: void 0, out: void 0, title: void 0 };
+  const options = { input: void 0, out: void 0, title: void 0, template: void 0 };
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     if (arg === "--help" || arg === "-h") {
@@ -12243,10 +12826,23 @@ function parseArgs(args) {
     }
     if (arg === "--out") {
       options.out = args[++i];
+      if (!options.out) {
+        throw new Error("--out requires a path.");
+      }
       continue;
     }
     if (arg === "--title") {
       options.title = args[++i];
+      if (!options.title) {
+        throw new Error("--title requires text.");
+      }
+      continue;
+    }
+    if (arg === "--template") {
+      options.template = args[++i];
+      if (!options.template) {
+        throw new Error("--template requires a .pptx path.");
+      }
       continue;
     }
     if (arg.startsWith("--")) {
@@ -12300,12 +12896,15 @@ async function main(args) {
 `);
     return;
   }
-  const inputPath = path2.resolve(rootDir, options.input);
-  const outputPath = path2.resolve(rootDir, options.out);
+  const workingDir = process.cwd();
+  const inputPath = path2.resolve(workingDir, options.input);
+  const outputPath = path2.resolve(workingDir, options.out);
+  const templatePath = options.template ? path2.resolve(workingDir, options.template) : void 0;
   const markdown = await readFile(inputPath, "utf8");
   const result = markdownToPptxResult(markdown, {
     title: options.title,
     sourcePath: inputPath,
+    ...templatePath ? { templatePptx: await readFile(templatePath) } : {},
     resolveImage: resolveLocalImage
   });
   await mkdir(path2.dirname(outputPath), { recursive: true });
@@ -12314,7 +12913,7 @@ async function main(args) {
     process.stderr.write(`${diagnostic.severity}: ${diagnostic.code}: ${diagnostic.message}
 `);
   }
-  process.stdout.write(`Wrote ${path2.relative(rootDir, outputPath)}
+  process.stdout.write(`Wrote ${path2.relative(workingDir, outputPath)}
 `);
 }
 

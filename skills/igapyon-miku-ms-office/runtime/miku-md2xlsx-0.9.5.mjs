@@ -2162,17 +2162,17 @@ function markdownTable(table, options) {
   while (++rowIndex < table.length) {
     const row2 = [];
     const sizes2 = [];
-    let columnIndex2 = -1;
+    let columnIndex3 = -1;
     if (table[rowIndex].length > mostCellsPerRow) {
       mostCellsPerRow = table[rowIndex].length;
     }
-    while (++columnIndex2 < table[rowIndex].length) {
-      const cell = serialize(table[rowIndex][columnIndex2]);
+    while (++columnIndex3 < table[rowIndex].length) {
+      const cell = serialize(table[rowIndex][columnIndex3]);
       if (settings.alignDelimiters !== false) {
         const size = stringLength(cell);
-        sizes2[columnIndex2] = size;
-        if (longestCellByColumn[columnIndex2] === void 0 || size > longestCellByColumn[columnIndex2]) {
-          longestCellByColumn[columnIndex2] = size;
+        sizes2[columnIndex3] = size;
+        if (longestCellByColumn[columnIndex3] === void 0 || size > longestCellByColumn[columnIndex3]) {
+          longestCellByColumn[columnIndex3] = size;
         }
       }
       row2.push(cell);
@@ -2180,22 +2180,22 @@ function markdownTable(table, options) {
     cellMatrix[rowIndex] = row2;
     sizeMatrix[rowIndex] = sizes2;
   }
-  let columnIndex = -1;
+  let columnIndex2 = -1;
   if (typeof align === "object" && "length" in align) {
-    while (++columnIndex < mostCellsPerRow) {
-      alignments[columnIndex] = toAlignment(align[columnIndex]);
+    while (++columnIndex2 < mostCellsPerRow) {
+      alignments[columnIndex2] = toAlignment(align[columnIndex2]);
     }
   } else {
     const code3 = toAlignment(align);
-    while (++columnIndex < mostCellsPerRow) {
-      alignments[columnIndex] = code3;
+    while (++columnIndex2 < mostCellsPerRow) {
+      alignments[columnIndex2] = code3;
     }
   }
-  columnIndex = -1;
+  columnIndex2 = -1;
   const row = [];
   const sizes = [];
-  while (++columnIndex < mostCellsPerRow) {
-    const code3 = alignments[columnIndex];
+  while (++columnIndex2 < mostCellsPerRow) {
+    const code3 = alignments[columnIndex2];
     let before = "";
     let after = "";
     if (code3 === 99) {
@@ -2208,17 +2208,17 @@ function markdownTable(table, options) {
     }
     let size = settings.alignDelimiters === false ? 1 : Math.max(
       1,
-      longestCellByColumn[columnIndex] - before.length - after.length
+      longestCellByColumn[columnIndex2] - before.length - after.length
     );
     const cell = before + "-".repeat(size) + after;
     if (settings.alignDelimiters !== false) {
       size = before.length + size + after.length;
-      if (size > longestCellByColumn[columnIndex]) {
-        longestCellByColumn[columnIndex] = size;
+      if (size > longestCellByColumn[columnIndex2]) {
+        longestCellByColumn[columnIndex2] = size;
       }
-      sizes[columnIndex] = size;
+      sizes[columnIndex2] = size;
     }
-    row[columnIndex] = cell;
+    row[columnIndex2] = cell;
   }
   cellMatrix.splice(1, 0, row);
   sizeMatrix.splice(1, 0, sizes);
@@ -2227,15 +2227,15 @@ function markdownTable(table, options) {
   while (++rowIndex < cellMatrix.length) {
     const row2 = cellMatrix[rowIndex];
     const sizes2 = sizeMatrix[rowIndex];
-    columnIndex = -1;
+    columnIndex2 = -1;
     const line = [];
-    while (++columnIndex < mostCellsPerRow) {
-      const cell = row2[columnIndex] || "";
+    while (++columnIndex2 < mostCellsPerRow) {
+      const cell = row2[columnIndex2] || "";
       let before = "";
       let after = "";
       if (settings.alignDelimiters !== false) {
-        const size = longestCellByColumn[columnIndex] - (sizes2[columnIndex] || 0);
-        const code3 = alignments[columnIndex];
+        const size = longestCellByColumn[columnIndex2] - (sizes2[columnIndex2] || 0);
+        const code3 = alignments[columnIndex2];
         if (code3 === 114) {
           before = " ".repeat(size);
         } else if (code3 === 99) {
@@ -2250,12 +2250,12 @@ function markdownTable(table, options) {
           after = " ".repeat(size);
         }
       }
-      if (settings.delimiterStart !== false && !columnIndex) {
+      if (settings.delimiterStart !== false && !columnIndex2) {
         line.push("|");
       }
       if (settings.padding !== false && // Don’t add the opening space if we’re not aligning and the cell is
       // empty: there will be a closing space.
-      !(settings.alignDelimiters === false && cell === "") && (settings.delimiterStart !== false || columnIndex)) {
+      !(settings.alignDelimiters === false && cell === "") && (settings.delimiterStart !== false || columnIndex2)) {
         line.push(" ");
       }
       if (settings.alignDelimiters !== false) {
@@ -2268,7 +2268,7 @@ function markdownTable(table, options) {
       if (settings.padding !== false) {
         line.push(" ");
       }
-      if (settings.delimiterEnd !== false || columnIndex !== mostCellsPerRow - 1) {
+      if (settings.delimiterEnd !== false || columnIndex2 !== mostCellsPerRow - 1) {
         line.push("|");
       }
     }
@@ -11930,19 +11930,182 @@ function finalizeSheet(sheet) {
     columnHints: computeColumnHints(rows)
   };
 }
+var EXCEL_MAX_ROW = 1048576;
+var EXCEL_MAX_COLUMN = 16384;
+function isBookMarker(value) {
+  return /^Book:\s*/i.test(value);
+}
+function looksLikeSheetMarker(value) {
+  return /^Sheet\s*:/i.test(value);
+}
+function parseSheetMarker(value) {
+  const match = value.match(/^Sheet:\s*(.+?)\s*$/i);
+  return match?.[1];
+}
+function looksLikeTableMarker(value) {
+  return /^Table\s*:/i.test(value);
+}
+function parseTableMarker(value) {
+  const match = value.match(/^Table:\s*\d+\s*\(([A-Z]+)(\d+)-([A-Z]+)(\d+)\)\s*$/i);
+  if (!match) {
+    return void 0;
+  }
+  const startRow = Number(match[2]) - 1;
+  const startCol = columnIndex(match[1]);
+  const endRow = Number(match[4]) - 1;
+  const endCol = columnIndex(match[3]);
+  if (startRow < 0 || startRow >= EXCEL_MAX_ROW || startCol < 0 || startCol >= EXCEL_MAX_COLUMN || endRow < startRow || endRow >= EXCEL_MAX_ROW || endCol < startCol || endCol >= EXCEL_MAX_COLUMN) {
+    return void 0;
+  }
+  return { startRow, startCol, endRow, endCol };
+}
+function columnIndex(value) {
+  let result = 0;
+  for (const character of value.toUpperCase()) {
+    result = result * 26 + character.charCodeAt(0) - 64;
+  }
+  return result - 1;
+}
+function buildXlsx2mdDialectSheets(tree, options) {
+  const usedNames = /* @__PURE__ */ new Set();
+  const sheets = [];
+  const prefaceRows = [];
+  let current;
+  let pendingTableRange;
+  for (const child of tree.children ?? []) {
+    const headingText = child.type === "heading" ? extractText(child).trim() : "";
+    if (pendingTableRange && child.type !== "table") {
+      throw dialectSyntaxError(child, "A Table: marker must be followed immediately by a Markdown table.");
+    }
+    if (child.type === "heading" && child.depth === 1 && isBookMarker(headingText)) {
+      continue;
+    }
+    if (child.type === "heading" && child.depth === 2) {
+      const sheetName = parseSheetMarker(headingText);
+      if (sheetName !== void 0) {
+        if (current) {
+          sheets.push(finalizeSheet(current));
+        }
+        current = {
+          name: uniqueSheetName(sheetName, usedNames),
+          rows: sheets.length === 0 ? prefaceRows.splice(0) : []
+        };
+        pendingTableRange = void 0;
+        continue;
+      }
+      if (looksLikeSheetMarker(headingText)) {
+        throw dialectSyntaxError(child, "Invalid Sheet: marker. Expected: ## Sheet: <name>");
+      }
+    }
+    if (child.type === "heading" && child.depth === 3) {
+      const tableRange = parseTableMarker(headingText);
+      if (tableRange) {
+        pendingTableRange = tableRange;
+        continue;
+      }
+      if (looksLikeTableMarker(headingText)) {
+        throw dialectSyntaxError(child, "Invalid Table: marker. Expected: ### Table: N (A1-C4)");
+      }
+    }
+    const targetRows = current?.rows ?? prefaceRows;
+    const rows = blockToRows(child, options);
+    if (child.type === "table" && pendingTableRange) {
+      placeTableRows(targetRows, rows, pendingTableRange, options);
+      pendingTableRange = void 0;
+      continue;
+    }
+    pendingTableRange = void 0;
+    appendFlowRows(targetRows, child, rows);
+  }
+  if (pendingTableRange) {
+    throw new Error("Invalid miku-xlsx2md dialect: a Table: marker at end of input has no Markdown table.");
+  }
+  if (current) {
+    sheets.push(finalizeSheet(current));
+  } else {
+    sheets.push(finalizeSheet({
+      name: sanitizeSheetName(options.title ?? "Sheet1"),
+      rows: prefaceRows
+    }));
+  }
+  return sheets;
+}
+function placeTableRows(target, rows, range, options) {
+  const declaredHeight = range.endRow - range.startRow + 1;
+  const declaredWidth = range.endCol - range.startCol + 1;
+  const rowCount = Math.max(rows.length, declaredHeight);
+  const displacedRows = displaceFlowRowsFromTableBand(target, range.startRow, rowCount);
+  overlayTableRows(target, rows, range, rowCount, declaredWidth, options);
+  appendDisplacedFlowRows(target, displacedRows);
+}
+function displaceFlowRowsFromTableBand(target, startRow, rowCount) {
+  const displacedRows = [];
+  for (let offset = 0; offset < rowCount; offset += 1) {
+    const rowIndex = startRow + offset;
+    const existing = target[rowIndex];
+    if (existing && existing.kind !== "blank" && existing.kind !== "table") {
+      displacedRows.push(existing);
+      target[rowIndex] = blankRow();
+    }
+  }
+  return displacedRows;
+}
+function overlayTableRows(target, rows, range, rowCount, declaredWidth, options) {
+  for (let offset = 0; offset < rowCount; offset += 1) {
+    const rowIndex = range.startRow + offset;
+    while (target.length <= rowIndex) {
+      target.push(blankRow());
+    }
+    const existing = target[rowIndex];
+    const cells = [...existing.cells];
+    while (cells.length < range.startCol) {
+      cells.push(emptyCell());
+    }
+    const sourceCells = rows[offset]?.cells ?? [];
+    const columnCount = Math.max(sourceCells.length, declaredWidth);
+    for (let columnOffset = 0; columnOffset < columnCount; columnOffset += 1) {
+      cells[range.startCol + columnOffset] = sourceCells[columnOffset] ?? {
+        value: "",
+        styleRole: styleRoleForTableCell(offset, options.headerRow, options.tableStyle)
+      };
+    }
+    target[rowIndex] = { ...existing, kind: "table", cells };
+  }
+}
+function appendDisplacedFlowRows(target, displacedRows) {
+  target.push(...displacedRows);
+}
+function appendFlowRows(target, child, rows) {
+  if (child.type === "heading" && rows.length > 0 && target.length > 0) {
+    const previous3 = target[target.length - 1];
+    if (previous3.kind !== "blank" && previous3.kind !== "heading" && previous3.kind !== "title") {
+      target.push(blankRow());
+    }
+  }
+  target.push(...rows);
+}
+function emptyCell() {
+  return { value: "", styleRole: "normal" };
+}
+function dialectSyntaxError(child, message) {
+  const line = child.position?.start?.line;
+  const location = Number.isInteger(line) ? ` at Markdown line ${line}` : "";
+  return new Error(`Invalid miku-xlsx2md dialect${location}: ${message}`);
+}
 function markdownToWorkbook(markdown, options = {}) {
   const tree = parseMarkdown(markdown);
   const headerRow = options.headerRow ?? true;
   const tableStyle = options.tableStyle ?? "bordered";
   const sheetHeadingDepth = options.sheetHeadingDepth ?? 1;
-  const sheets = buildSheets(tree, {
+  const buildOptions = {
     headerRow,
     tableStyle,
     sheetMode: options.sheetMode,
     sheetHeadingDepth,
     title: options.title
-  });
-  return { sheets: normalizeInternalHyperlinkTargets(sheets), imageAssets: options.imageAssets };
+  };
+  const sheets = options.inputDialect === "miku-xlsx2md" ? buildXlsx2mdDialectSheets(tree, buildOptions) : buildSheets(tree, buildOptions);
+  return { sheets: normalizeInternalHyperlinkTargets(sheets), imageAssets: options.imageAssets, templateXlsx: options.templateXlsx };
 }
 function normalizeInternalHyperlinkTargets(sheets) {
   const sheetNames = new Set(sheets.map((sheet) => sheet.name));
@@ -11985,6 +12148,12 @@ function quoteSheetName(name) {
 }
 var textEncoder = new TextEncoder();
 var textDecoder = new TextDecoder();
+function readUint16(data, offset) {
+  return data[offset] | data[offset + 1] << 8;
+}
+function readUint32(data, offset) {
+  return (data[offset] | data[offset + 1] << 8 | data[offset + 2] << 16 | data[offset + 3] << 24) >>> 0;
+}
 function writeUint16(buffer, offset, value) {
   buffer[offset] = value & 255;
   buffer[offset + 1] = value >>> 8 & 255;
@@ -12007,6 +12176,9 @@ function concatBytes(parts) {
 }
 function asBytes(data) {
   return typeof data === "string" ? textEncoder.encode(data) : data;
+}
+function createDiagnostic(severity, code3, message, path2) {
+  return path2 === void 0 ? { severity, code: code3, message } : { severity, code: code3, message, path: path2 };
 }
 function normalizeOpcPartPath(partPath) {
   const withoutHash = partPath.split("#", 1)[0] ?? "";
@@ -12040,7 +12212,10 @@ function escapeXmlAttribute(value) {
   return escapeXmlText(value).replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 function sanitizeXmlText(value) {
-  return value.replace(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD]/g, "");
+  return value.replace(
+    /[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu,
+    ""
+  );
 }
 function buildOpcContentTypesXml(contentTypes2) {
   const defaults = contentTypes2.defaults.map((item) => `<Default Extension="${escapeXmlAttribute(item.extension)}" ContentType="${escapeXmlAttribute(item.contentType)}"/>`).join("");
@@ -12074,6 +12249,28 @@ var CENTRAL_DIRECTORY_SIGNATURE = 33639248;
 var LOCAL_FILE_SIGNATURE = 67324752;
 var ZIP_GENERAL_PURPOSE_FLAG_UTF8 = 2048;
 var FIXED_TIMESTAMP = new Date(Date.UTC(1980, 0, 1, 0, 0, 0));
+function readZipPackage(data) {
+  const diagnostics = [];
+  const entries = [];
+  const centralDirectory = readCentralDirectory(data, diagnostics);
+  for (const central of centralDirectory) {
+    try {
+      const compressed = readZipEntryCompressedData(data, central);
+      const entryData = central.method === 0 ? compressed : getNodeZlib().inflateRawSync(compressed);
+      entries.push(buildZipEntry(central, entryData));
+    } catch (error) {
+      diagnostics.push(
+        createDiagnostic(
+          "error",
+          "zip.entry.read_failed",
+          error instanceof Error ? error.message : String(error),
+          central.path
+        )
+      );
+    }
+  }
+  return { entries, diagnostics };
+}
 function writeZipPackage(entries, options = {}) {
   const order2 = options.order ?? "stable";
   const prepared = prepareZipEntries(entries, options);
@@ -12092,6 +12289,14 @@ function writeZipPackage(entries, options = {}) {
   const centralDirectory = concatBytes(centralParts);
   const end = buildEndOfCentralDirectory(prepared.length, centralDirectory.length, offset);
   return concatBytes([...localParts, centralDirectory, end]);
+}
+function getZipEntry(entries, entryPath) {
+  const normalized = normalizeOpcPartPath(entryPath);
+  return entries.find((entry) => entry.path === normalized);
+}
+function getZipTextEntry(entries, entryPath) {
+  const entry = getZipEntry(entries, entryPath);
+  return entry === void 0 ? void 0 : textDecoder.decode(entry.data);
 }
 function prepareZipEntries(entries, options) {
   const timestamp = options.timestamp ?? FIXED_TIMESTAMP;
@@ -12178,12 +12383,93 @@ function buildEndOfCentralDirectory(entryCount, centralDirectorySize, centralDir
   writeUint16(end, 20, 0);
   return end;
 }
+function readZipEntryCompressedData(data, central) {
+  const localNameLength = readUint16(data, central.localHeaderOffset + 26);
+  const localExtraLength = readUint16(data, central.localHeaderOffset + 28);
+  const dataStart = central.localHeaderOffset + 30 + localNameLength + localExtraLength;
+  return data.slice(dataStart, dataStart + central.compressedSize);
+}
+function buildZipEntry(central, entryData) {
+  return {
+    path: central.path,
+    data: new Uint8Array(entryData),
+    compression: central.method === 0 ? "store" : "deflate",
+    compressedSize: central.compressedSize,
+    uncompressedSize: central.uncompressedSize,
+    crc32: central.crc,
+    modifiedAt: central.modifiedAt
+  };
+}
+function readCentralDirectory(data, diagnostics) {
+  const eocdOffset = findEndOfCentralDirectory(data);
+  if (eocdOffset < 0) {
+    diagnostics.push(createDiagnostic("error", "zip.eocd.missing", "End of central directory was not found."));
+    return [];
+  }
+  const entryCount = readUint16(data, eocdOffset + 10);
+  const centralDirectoryOffset = readUint32(data, eocdOffset + 16);
+  const entries = [];
+  let offset = centralDirectoryOffset;
+  for (let index2 = 0; index2 < entryCount; index2 += 1) {
+    if (readUint32(data, offset) !== CENTRAL_DIRECTORY_SIGNATURE) {
+      diagnostics.push(createDiagnostic("error", "zip.central_directory.invalid", "Central directory entry signature is invalid."));
+      break;
+    }
+    const flags = readUint16(data, offset + 8);
+    const method = readUint16(data, offset + 10);
+    const time = readUint16(data, offset + 12);
+    const date = readUint16(data, offset + 14);
+    const crc = readUint32(data, offset + 16);
+    const compressedSize = readUint32(data, offset + 20);
+    const uncompressedSize = readUint32(data, offset + 24);
+    const fileNameLength = readUint16(data, offset + 28);
+    const extraLength = readUint16(data, offset + 30);
+    const commentLength = readUint16(data, offset + 32);
+    const localHeaderOffset = readUint32(data, offset + 42);
+    const nameStart = offset + 46;
+    const path2 = textDecoder.decode(data.slice(nameStart, nameStart + fileNameLength));
+    if (method !== 0 && method !== 8) {
+      diagnostics.push(createDiagnostic("error", "zip.compression.unsupported", `Unsupported ZIP compression method: ${method}`, path2));
+    } else {
+      entries.push({
+        path: normalizeOpcPartPath(path2),
+        method,
+        flags,
+        crc,
+        compressedSize,
+        uncompressedSize,
+        localHeaderOffset,
+        modifiedAt: fromDosDateTime(date, time)
+      });
+    }
+    offset = nameStart + fileNameLength + extraLength + commentLength;
+  }
+  return entries;
+}
+function findEndOfCentralDirectory(data) {
+  const minOffset = Math.max(0, data.length - 65535 - 22);
+  for (let offset = data.length - 22; offset >= minOffset; offset -= 1) {
+    if (readUint32(data, offset) === EOCD_SIGNATURE) {
+      return offset;
+    }
+  }
+  return -1;
+}
 function toDosTime(date) {
   return date.getUTCHours() << 11 | date.getUTCMinutes() << 5 | Math.floor(date.getUTCSeconds() / 2);
 }
 function toDosDate(date) {
   const year = Math.max(1980, date.getUTCFullYear());
   return year - 1980 << 9 | date.getUTCMonth() + 1 << 5 | date.getUTCDate();
+}
+function fromDosDateTime(date, time) {
+  const year = 1980 + (date >>> 9 & 127);
+  const month = date >>> 5 & 15;
+  const day = date & 31;
+  const hour = time >>> 11 & 31;
+  const minute = time >>> 5 & 63;
+  const second = (time & 31) * 2;
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
 }
 function getNodeZlib() {
   const runtime = globalThis;
@@ -12200,7 +12486,10 @@ function xml(value) {
   return sanitizeXmlText2(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 function sanitizeXmlText2(value) {
-  return value.replace(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD]/g, "");
+  return value.replace(
+    /[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu,
+    ""
+  );
 }
 function inlineTextXml(value) {
   const sanitized = sanitizeXmlText2(value);
@@ -12483,6 +12772,156 @@ function stylesXml() {
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
 }
+function readXlsxTemplateParts(templateXlsx) {
+  if (!templateXlsx) {
+    return void 0;
+  }
+  const result = readZipPackage(templateXlsx);
+  const errors = result.diagnostics.filter((diagnostic) => diagnostic.severity === "error");
+  if (errors.length > 0) {
+    throw new Error(`Template XLSX is not a readable ZIP package: ${errors.map((diagnostic) => diagnostic.message).join("; ")}`);
+  }
+  const workbookXml2 = getZipTextEntry(result.entries, "xl/workbook.xml");
+  const workbookRelsXml = getZipTextEntry(result.entries, "xl/_rels/workbook.xml.rels");
+  if (!workbookXml2 || !workbookRelsXml) {
+    throw new Error("Template XLSX does not contain required workbook parts.");
+  }
+  const relTargets = parseRelationships(workbookRelsXml);
+  const sheets = Array.from(workbookXml2.matchAll(/<sheet\b([^>]*)\/?>/g), (match, index2) => {
+    const attributes = parseAttributes(match[1] ?? "");
+    const relId = attributes.get("r:id") ?? "";
+    const path2 = normalizePackagePath("xl/workbook.xml", relTargets.get(relId) ?? `worksheets/sheet${index2 + 1}.xml`);
+    const xml2 = getZipTextEntry(result.entries, path2) ?? "";
+    return {
+      name: attributes.get("name") ?? `Sheet${index2 + 1}`,
+      path: path2,
+      xml: xml2
+    };
+  }).filter((sheet) => sheet.xml);
+  return {
+    entries: result.entries,
+    sheets,
+    stylesXml: getZipTextEntry(result.entries, "xl/styles.xml"),
+    themeEntries: result.entries.filter((entry) => entry.path === "xl/theme/theme1.xml").map((entry) => ({ path: "xl/theme/theme1.xml", data: entry.data }))
+  };
+}
+function templateGeneratedWorksheetXml(template, generatedXml, sheetIndex) {
+  const baseXml = selectTemplateSheet(template, sheetIndex)?.xml;
+  if (!baseXml) {
+    return generatedXml;
+  }
+  const generatedDimension = extractSelfClosing(generatedXml, "dimension");
+  const generatedSheetData = mergeGeneratedSheetDataStyles(extractBlock(generatedXml, "sheetData") ?? "<sheetData/>", baseXml);
+  const generatedMergeCells = extractBlock(generatedXml, "mergeCells") ?? "";
+  const generatedHyperlinks = extractBlock(generatedXml, "hyperlinks") ?? "";
+  const generatedDrawing = extractSelfClosing(generatedXml, "drawing") ?? "";
+  const sheetViews = normalizeSheetViews(extractBlock(baseXml, "sheetViews") ?? extractBlock(generatedXml, "sheetViews") ?? "");
+  const sheetFormat = extractSelfClosing(baseXml, "sheetFormatPr") ?? extractSelfClosing(generatedXml, "sheetFormatPr") ?? "";
+  const cols = extractBlock(baseXml, "cols") ?? extractBlock(generatedXml, "cols") ?? "";
+  const pageMargins = extractSelfClosing(baseXml, "pageMargins") ?? "";
+  const worksheetStartTag = mergedWorksheetStartTag(baseXml, generatedXml);
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+${worksheetStartTag}
+${generatedDimension ?? ""}
+${sheetViews}
+${sheetFormat}
+${cols}
+${generatedSheetData}
+${generatedMergeCells}
+${generatedHyperlinks}
+${pageMargins}
+${generatedDrawing}
+</worksheet>`;
+}
+function shouldCopyTemplateEntry(path2) {
+  return path2 === "xl/theme/theme1.xml";
+}
+function hasTemplateTheme(template) {
+  return Boolean(template?.themeEntries.length);
+}
+function selectTemplateSheet(template, sheetIndex) {
+  if (!template || template.sheets.length === 0) {
+    return void 0;
+  }
+  return template.sheets[Math.min(sheetIndex - 1, template.sheets.length - 1)];
+}
+function parseRelationships(xml2) {
+  const relationships = /* @__PURE__ */ new Map();
+  for (const match of xml2.matchAll(/<Relationship\b([^>]*)\/?>/g)) {
+    const attributes = parseAttributes(match[1] ?? "");
+    const id = attributes.get("Id");
+    const target = attributes.get("Target");
+    if (id && target) {
+      relationships.set(id, target);
+    }
+  }
+  return relationships;
+}
+function parseAttributes(xml2) {
+  return new Map(Array.from(xml2.matchAll(/\b([A-Za-z_:][\w:.-]*)="([^"]*)"/g), (match) => [match[1], decodeXml(match[2])]));
+}
+function decodeXml(value) {
+  return value.replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+function normalizePackagePath(sourcePath, targetPath) {
+  const sourceDir = sourcePath.split("/").slice(0, -1);
+  const parts = targetPath.startsWith("/") ? [] : [...sourceDir];
+  for (const part of targetPath.split("/")) {
+    if (!part || part === ".") {
+      continue;
+    }
+    if (part === "..") {
+      parts.pop();
+    } else {
+      parts.push(part);
+    }
+  }
+  return parts.join("/");
+}
+function extractBlock(xml2, localName) {
+  return xml2.match(new RegExp(`<${localName}\\b[\\s\\S]*?<\\/${localName}>`))?.[0];
+}
+function extractSelfClosing(xml2, localName) {
+  return xml2.match(new RegExp(`<${localName}\\b[^>]*/>`))?.[0];
+}
+function mergedWorksheetStartTag(baseXml, generatedXml) {
+  const fallback = '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+  const baseTag = baseXml.match(/<worksheet\b[^>]*>/)?.[0];
+  const generatedTag = generatedXml.match(/<worksheet\b[^>]*>/)?.[0];
+  if (!baseTag) {
+    return generatedTag ?? fallback;
+  }
+  if (!generatedTag) {
+    return baseTag;
+  }
+  const declaredNamespaces = new Set(Array.from(baseTag.matchAll(/\s(xmlns(?::[A-Za-z_][\w.-]*)?)="[^"]*"/g), (match) => match[1]));
+  const missingNamespaces = Array.from(generatedTag.matchAll(/\s(xmlns(?::[A-Za-z_][\w.-]*)?)="[^"]*"/g)).filter((match) => !declaredNamespaces.has(match[1])).map((match) => match[0]).join("");
+  return missingNamespaces ? baseTag.replace(/>$/, `${missingNamespaces}>`) : baseTag;
+}
+function mergeGeneratedSheetDataStyles(generatedSheetData, templateWorksheetXml) {
+  const templateStyles = /* @__PURE__ */ new Map();
+  const templateSheetData = extractBlock(templateWorksheetXml, "sheetData") ?? "";
+  for (const match of templateSheetData.matchAll(/<c\b([^>]*)>/g)) {
+    const attributes = parseAttributes(match[1] ?? "");
+    const ref = attributes.get("r");
+    const style = attributes.get("s");
+    if (ref && style) {
+      templateStyles.set(ref, style);
+    }
+  }
+  return generatedSheetData.replace(/<c\b([^>]*)>/g, (full, attributesXml) => {
+    const attributes = parseAttributes(attributesXml);
+    const ref = attributes.get("r");
+    const style = ref ? templateStyles.get(ref) ?? "0" : "0";
+    if (/\bs="/.test(full)) {
+      return full.replace(/\bs="[^"]*"/, `s="${style}"`);
+    }
+    return full.replace("<c", `<c s="${style}"`);
+  });
+}
+function normalizeSheetViews(sheetViewsXml) {
+  return sheetViewsXml.replace(/\s*xr[0-9]*:uid="[^"]*"/g, "").replace(/\s*activeCell="[^"]*"/g, "").replace(/\s*sqref="[^"]*"/g, "");
+}
 function worksheetHyperlinks(sheet, drawing) {
   let externalIndex = drawing ? 2 : 1;
   return sheet.rows.flatMap((row, rowIndex) => row.cells.flatMap((cell, cellIndex) => {
@@ -12619,7 +13058,7 @@ ${drawingRelationship}
 ${hyperlinkRelationships}
 </Relationships>`;
 }
-function contentTypes(sheetCount, drawings) {
+function contentTypes(sheetCount, drawings, template) {
   const imageExtensions = Array.from(new Set(drawings.flatMap((drawing) => drawing.images.map((image2) => mediaExtension(image2.asset)))));
   return buildOpcContentTypesXml({
     defaults: [
@@ -12642,6 +13081,10 @@ function contentTypes(sheetCount, drawings) {
         partName: "xl/styles.xml",
         contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"
       },
+      ...hasTemplateTheme(template) ? [{
+        partName: "xl/theme/theme1.xml",
+        contentType: "application/vnd.openxmlformats-officedocument.theme+xml"
+      }] : [],
       { partName: "docProps/core.xml", contentType: "application/vnd.openxmlformats-package.core-properties+xml" },
       { partName: "docProps/app.xml", contentType: "application/vnd.openxmlformats-officedocument.extended-properties+xml" },
       ...Array.from({ length: sheetCount }, (_unused, index2) => ({
@@ -12681,7 +13124,7 @@ function workbookXml(sheets) {
 <sheets>${sheetXml}</sheets>
 </workbook>`;
 }
-function workbookRels(sheetCount) {
+function workbookRels(sheetCount, template) {
   return buildOpcRelationshipsXml([
     ...Array.from({ length: sheetCount }, (_unused, index2) => ({
       id: `rId${index2 + 1}`,
@@ -12692,7 +13135,12 @@ function workbookRels(sheetCount) {
       id: `rId${sheetCount + 1}`,
       type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
       target: "styles.xml"
-    }
+    },
+    ...hasTemplateTheme(template) ? [{
+      id: `rId${sheetCount + 2}`,
+      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+      target: "theme/theme1.xml"
+    }] : []
   ]);
 }
 function coreProps() {
@@ -12715,18 +13163,21 @@ function writeXlsx(workbook) {
   const renderWorkbook = withReservedImagePreviewRows(workbook);
   const drawings = collectSheetDrawings(renderWorkbook);
   const drawingsBySheet = new Map(drawings.map((drawing) => [drawing.sheetIndex, drawing]));
+  const template = readXlsxTemplateParts(workbook.templateXlsx);
+  const generatedWorksheetEntries = renderWorkbook.sheets.map((sheet, index2) => ({
+    path: `xl/worksheets/sheet${index2 + 1}.xml`,
+    data: templateGeneratedWorksheetXml(template, worksheetXml(sheet, drawingsBySheet.get(index2 + 1)), index2 + 1)
+  }));
   const entries = [
-    { path: "[Content_Types].xml", data: contentTypes(renderWorkbook.sheets.length, drawings) },
+    ...template?.entries.filter((entry) => shouldCopyTemplateEntry(entry.path)).map((entry) => ({ path: entry.path, data: entry.data })) ?? [],
+    { path: "[Content_Types].xml", data: contentTypes(renderWorkbook.sheets.length, drawings, template) },
     { path: "_rels/.rels", data: rootRels() },
     { path: "xl/workbook.xml", data: workbookXml(renderWorkbook.sheets) },
-    { path: "xl/_rels/workbook.xml.rels", data: workbookRels(renderWorkbook.sheets.length) },
-    { path: "xl/styles.xml", data: stylesXml() },
+    { path: "xl/_rels/workbook.xml.rels", data: workbookRels(renderWorkbook.sheets.length, template) },
+    { path: "xl/styles.xml", data: template?.stylesXml ?? stylesXml() },
     { path: "docProps/core.xml", data: coreProps() },
     { path: "docProps/app.xml", data: appProps(renderWorkbook.sheets.length) },
-    ...renderWorkbook.sheets.map((sheet, index2) => ({
-      path: `xl/worksheets/sheet${index2 + 1}.xml`,
-      data: worksheetXml(sheet, drawingsBySheet.get(index2 + 1))
-    })),
+    ...generatedWorksheetEntries,
     ...renderWorkbook.sheets.flatMap((sheet, index2) => {
       const drawing = drawingsBySheet.get(index2 + 1);
       return hasWorksheetRelationships(sheet, drawing) ? [{
@@ -12762,7 +13213,7 @@ function md2xlsx(markdown, options = {}) {
 // package.json
 var package_default = {
   name: "miku-md2xlsx",
-  version: "0.6.6",
+  version: "0.9.5",
   private: true,
   type: "module",
   scripts: {
@@ -12836,6 +13287,12 @@ Exit codes:
 
 Options:
   --out <file>              Output .xlsx path
+  --template <file>         Use a template .xlsx as the sheet-format source.
+                            Generated sheets overwrite matching template
+                            sheets; extra sheets reuse the rightmost template
+                            sheet as their base.
+  --input-dialect <name>    markdown or miku-xlsx2md (default: markdown).
+                            miku-xlsx2md is an early access feature.
   --sheet-mode <mode>       single or heading (default: single)
   --sheet-heading-depth <n> Heading depth for sheet splits: 1 or 2 (default: 1)
   --title <value>           Workbook title or first sheet name
@@ -12846,6 +13303,8 @@ Options:
 
 Examples:
   npm run cli -- ./sample.md --out ./sample.xlsx
+  npm run cli -- ./sample.md --out ./sample.xlsx --template ./template.xlsx
+  npm run cli -- ./book.md --out ./book.xlsx --input-dialect miku-xlsx2md
   npm run cli -- ./sample.md --out ./sample.xlsx --sheet-mode heading
   npm run cli -- ./book.md --out ./book.xlsx --sheet-mode heading --sheet-heading-depth 2
 
@@ -12862,11 +13321,40 @@ Markdown handling notes:
   - A cell containing a single Markdown link is emitted as an Excel hyperlink
     when the target can be represented by Excel.
 
+Template mode notes:
+  - --template reads an existing .xlsx workbook as a formatting source.
+  - Generated sheet 1 is written over template sheet 1, generated sheet 2 over
+    template sheet 2, and so on.
+  - If generated sheets exceed the template sheet count, additional generated
+    sheets reuse the rightmost template sheet as their base.
+  - Generated Markdown cell values replace template sheet data. Existing
+    template cell values, formulas, charts, drawings, tables, pivot data, and
+    shared strings are not preserved as workbook content.
+  - Template workbook styles, theme parts, and worksheet-level settings are
+    reused where this generator can preserve them. This is template-assisted
+    workbook generation, not pixel-perfect Excel layout editing.
+
 Sheet mode notes:
   - single: create one worksheet from the whole Markdown document.
   - heading: split worksheets at headings matching --sheet-heading-depth.
-  - Use --sheet-heading-depth 2 for miku-xlsx2md-style Markdown where # is the
-    workbook title and ## headings are worksheet names.
+  - Use --sheet-heading-depth 2 to split generic Markdown at ## headings without
+    interpreting miku-xlsx2md metadata.
+
+miku-xlsx2md dialect notes:
+  - Early access: this input dialect and its restoration behavior may change.
+  - Use it for Markdown generated by miku-xlsx2md when semantic round-trip
+    restoration is wanted.
+  - # Book: is consumed as a structural marker and is not written to a cell.
+  - ## Sheet: starts a worksheet and restores its name subject to Excel sheet
+    name restrictions and duplicate-name adjustment.
+  - ### Table: N (A1-C4) anchors the immediately following Markdown table at
+    that worksheet range, including supported merge markers.
+  - Do not combine this dialect with --sheet-mode or --sheet-heading-depth;
+    such combinations are rejected as invalid CLI usage.
+  - --title is used as the fallback sheet name only when no ## Sheet: marker
+    exists.
+  - Invalid Sheet:/Table: markers, or a Table: marker without an immediately
+    following Markdown table, cause conversion to fail instead of being guessed.
 `;
 var CliUsageError = class extends Error {
   constructor(message) {
@@ -12913,9 +13401,15 @@ function readTableStyle(value) {
   }
   return value;
 }
-async function collectImageAssets(markdown, inputPath) {
+function readInputDialect(value) {
+  if (value !== "markdown" && value !== "miku-xlsx2md") {
+    throw new CliUsageError("--input-dialect must be markdown or miku-xlsx2md.");
+  }
+  return value;
+}
+async function collectImageAssets(markdown, inputPath, inputDialect) {
   const inputDir = dirname(resolve(inputPath));
-  const model = markdownToXlsxModel(markdown);
+  const model = markdownToXlsxModel(markdown, { inputDialect });
   const paths = model.sheets.flatMap((sheet) => sheet.rows.flatMap((row) => (row.imageRefs ?? []).map((ref) => ref.path)));
   const uniquePaths = Array.from(new Set(paths)).filter(isLocalRelativeImagePath);
   const assets = [];
@@ -12943,7 +13437,11 @@ async function main(args) {
   }
   let input = "";
   let out = "";
+  let template = "";
+  let sheetModeWasSpecified = false;
+  let sheetHeadingDepthWasSpecified = false;
   const options = {
+    inputDialect: "markdown",
     sheetMode: "single",
     sheetHeadingDepth: 1,
     tableStyle: "bordered",
@@ -12954,11 +13452,19 @@ async function main(args) {
     if (arg === "--out") {
       out = readOption(args, i, arg);
       i += 1;
+    } else if (arg === "--template") {
+      template = readOption(args, i, arg);
+      i += 1;
+    } else if (arg === "--input-dialect") {
+      options.inputDialect = readInputDialect(readOption(args, i, arg));
+      i += 1;
     } else if (arg === "--sheet-mode") {
       options.sheetMode = readSheetMode(readOption(args, i, arg));
+      sheetModeWasSpecified = true;
       i += 1;
     } else if (arg === "--sheet-heading-depth") {
       options.sheetHeadingDepth = readSheetHeadingDepth(readOption(args, i, arg));
+      sheetHeadingDepthWasSpecified = true;
       i += 1;
     } else if (arg === "--title") {
       options.title = readOption(args, i, arg);
@@ -12982,8 +13488,14 @@ async function main(args) {
   if (!out) {
     throw new CliUsageError("--out <file> is required.");
   }
+  if (options.inputDialect === "miku-xlsx2md" && (sheetModeWasSpecified || sheetHeadingDepthWasSpecified)) {
+    throw new CliUsageError("--input-dialect miku-xlsx2md cannot be combined with --sheet-mode or --sheet-heading-depth.");
+  }
   const markdown = await readFile(input, "utf8");
-  options.imageAssets = await collectImageAssets(markdown, input);
+  options.imageAssets = await collectImageAssets(markdown, input, options.inputDialect);
+  if (template) {
+    options.templateXlsx = await readFile(template);
+  }
   const workbook = md2xlsx(markdown, options);
   await mkdir(dirname(out), { recursive: true });
   await writeFile(out, workbook);
