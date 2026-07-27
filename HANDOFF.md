@@ -18,14 +18,15 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 ## Current State
 
 - `miku-ms-office-skills` has a runtime-aware Agent Skills package.
-- Current package version is `0.6.2`.
+- Current package version is `0.7.0`.
 - The installable skill is `skills/igapyon-miku-ms-office/`.
 - Runtime artifacts are bundled under `skills/igapyon-miku-ms-office/runtime/`.
-- Runtime artifacts were refreshed on 2026-07-18 for the latest checked
+- Runtime artifacts were refreshed on 2026-07-27 for the latest checked
   Markdown-to-Office Node.js and Java converter releases recorded in
   `skills/igapyon-miku-ms-office/references/upstreams.md`.
-- `bundle/igapyon-miku-ms-office-skills-0.6.2.zip` was regenerated with the
-  refreshed runtime artifacts.
+- Package version was updated to `0.7.0` for the coordinated 2026-07-27 runtime
+  refresh. The versioned release ZIP is
+  `bundle/igapyon-miku-ms-office-skills-0.7.0.zip`.
 - The project goal has been updated to completing a distributable runtime-aware
   Agent Skills package, not just the initial skeleton.
 - Candidate upstream release versions and artifact names were recorded in
@@ -37,6 +38,12 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 
 - Confirm with desktop Word that generated DOCX files no longer open in
   Compatibility Mode.
+- After corrective releases for `miku-md2xlsx-java` Issue #9 and
+  `miku-md2pptx-java` Issue #9, refresh the affected JARs and repeat parity
+  verification.
+- Track the five upstream Release Asset Help corrections and the four
+  version-only output corrections linked from `TODO.md`; refresh affected
+  runtimes and complete `miku-ms-office-skills` Issue #13 after releases.
 - Review the final diff and commit when ready.
 
 ## Relevant Files
@@ -50,20 +57,18 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 ## Watch Outs
 
 - `miku-indexgen` is not available in PATH, but `index.json` was refreshed with
-  the installed `miku-indexgen` 1.6.2 runtime on 2026-07-18.
+  the installed `miku-indexgen` 1.6.2 runtime on 2026-07-27.
 - Source artifacts are not bundled.
-- Latest releases checked on 2026-07-18 are `miku-md2xlsx` Node/Java `v0.9.5`,
-  `miku-md2docx` Node/Java `v1.0.1`, and `miku-md2pptx` Node/Java `v0.6.0`.
-  All six artifacts are now bundled.
-- No public upstream Issue or current upstream maintenance record identifies a
-  required corrective Java DOCX/XLSX release. DOCX Java `v1.0.1` records a
-  successful Node comparison and round-trip check, while XLSX Java `v0.9.5`
-  records no open bounded parity item.
-- Six upstream Markdown-to-Office `--help` improvement Issues were opened on
-  2026-07-18 and are linked from `TODO.md`.
-- Branch `devel-tiga0702xdd` contains local commit `babe65e` for the 0.6.2
-  version bump and is one commit ahead of `origin/devel`; the three version
-  files are not uncommitted changes.
+- Latest releases checked on 2026-07-27 are `miku-md2xlsx` Node/Java `v0.10.0`,
+  `miku-md2docx` Node/Java `v1.1.0`, and `miku-md2pptx` Node/Java `v0.7.0`.
+  All six artifacts are bundled and their Release SHA-256 values matched.
+- The 2026-07-27 releases add DEFLATE packaging, improve direct Release Asset
+  CLI contracts, and include bounded Java parity fixes.
+- Six upstream Markdown-to-Office `--help` improvement Issues opened on
+  2026-07-18 are linked from `TODO.md`; the new releases include those
+  CLI-contract improvements.
+- Current branch is `devel-tiga0718nfi`; the 2026-07-27 runtime refresh and
+  synchronized documentation/test changes are uncommitted.
 - Representative local comparison produced valid Node and Java Office ZIP
   packages with identical entry sets. DOCX key XML matched exactly. XLSX
   worksheet blank-row/rich-text representation and PPTX default-style/XML
@@ -83,3 +88,13 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
   refreshed Markdown-to-Office runtimes.
 - 2026-07-18: `npm run build`: passed and regenerated the 0.6.2 release zip.
 - 2026-07-18: `quick_validate.py`: passed.
+- 2026-07-27: all six new Release SHA-256 values and `--version` outputs
+  matched.
+- 2026-07-27: `npm test` passed all 8 tests, including isolated conversion
+  smoke and bundle-content verification.
+- 2026-07-27: representative Node/Java outputs had identical ZIP entry sets
+  and all inspected entries used DEFLATE compression. DOCX key XML matched
+  exactly; XLSX and PPTX retained implementation-level XML differences.
+- 2026-07-27: `quick_validate.py` passed.
+- 2026-07-27: package version `0.7.0` selected; version-aligned build and ZIP
+  verification completed.

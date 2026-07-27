@@ -11,12 +11,12 @@ const skillName = "igapyon-miku-ms-office";
 const expectedRuntimeFiles = [
   "miku-docx2md-1.2.1.jar",
   "miku-docx2md-1.2.1.mjs",
-  "miku-md2docx-1.0.1.mjs",
-  "miku-md2docx-java-1.0.1.jar",
-  "miku-md2pptx-0.6.0.mjs",
-  "miku-md2pptx-java-0.6.0.jar",
-  "miku-md2xlsx-0.9.5.mjs",
-  "miku-md2xlsx-java-0.9.5.jar",
+  "miku-md2docx-1.1.0.mjs",
+  "miku-md2docx-java-1.1.0.jar",
+  "miku-md2pptx-0.7.0.mjs",
+  "miku-md2pptx-java-0.7.0.jar",
+  "miku-md2xlsx-0.10.0.mjs",
+  "miku-md2xlsx-java-0.10.0.jar",
   "miku-pptx2md-0.5.1.jar",
   "miku-pptx2md-0.5.1.mjs",
   "miku-xlsx2md-1.3.0.jar",
@@ -26,18 +26,18 @@ const cliMjsFiles = new Set([
   "miku-xlsx2md-1.3.0.mjs",
   "miku-docx2md-1.2.1.mjs",
   "miku-pptx2md-0.5.1.mjs",
-  "miku-md2docx-1.0.1.mjs",
-  "miku-md2pptx-0.6.0.mjs",
-  "miku-md2xlsx-0.9.5.mjs"
+  "miku-md2docx-1.1.0.mjs",
+  "miku-md2pptx-0.7.0.mjs",
+  "miku-md2xlsx-0.10.0.mjs"
 ]);
 
 const conversionExtensions = new Map([
-  ["miku-md2xlsx-0.9.5.mjs", "xlsx"],
-  ["miku-md2xlsx-java-0.9.5.jar", "xlsx"],
-  ["miku-md2docx-1.0.1.mjs", "docx"],
-  ["miku-md2docx-java-1.0.1.jar", "docx"],
-  ["miku-md2pptx-0.6.0.mjs", "pptx"],
-  ["miku-md2pptx-java-0.6.0.jar", "pptx"]
+  ["miku-md2xlsx-0.10.0.mjs", "xlsx"],
+  ["miku-md2xlsx-java-0.10.0.jar", "xlsx"],
+  ["miku-md2docx-1.1.0.mjs", "docx"],
+  ["miku-md2docx-java-1.1.0.jar", "docx"],
+  ["miku-md2pptx-0.7.0.mjs", "pptx"],
+  ["miku-md2pptx-java-0.7.0.jar", "pptx"]
 ]);
 
 test("generated bundle works from an isolated install shape", () => {

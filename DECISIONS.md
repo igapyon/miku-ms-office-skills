@@ -91,3 +91,39 @@ Use this section for reusable decisions about build/test/package/comparison/roun
 - Decision: Assert only that `runtime/.gitkeep` is absent when runtime artifacts are bundled.
 - Reason: Placeholder files outside `runtime/` are part of the current starter bundle shape, while `runtime/.gitkeep` should disappear once real runtime artifacts exist.
 - Next time: Keep bundle exclusion assertions scoped to the directory whose lifecycle changed.
+
+### 2026-07-27: Refresh Markdown-to-Office Node and Java runtimes together
+
+- Context: All six Markdown-to-Office upstreams published coordinated releases
+  with DEFLATE packaging and aligned CLI-contract changes.
+- Decision: Replace the Node and Java runtime pairs in one intake and keep the
+  Office-to-Markdown runtime set unchanged.
+- Reason: Pairwise intake preserves backend expectations and lets the isolated
+  bundle smoke test exercise the same upstream generation contract.
+- Version decision: Use package version `0.7.0` for this coordinated runtime
+  refresh, as explicitly selected on 2026-07-27.
+
+### 2026-07-27: Treat bounded Java parity differences as upstream bugs
+
+- Context: Current Node/Java comparison found XLSX blank-row placement and
+  PPTX theme/default-text-style differences.
+- Decision: Keep the Node products as the semantic baseline and request Java
+  parity fixes instead of changing the Node behavior or accepting the
+  differences for the final baseline.
+- Tracking:
+  `miku-md2xlsx-java` Issue #9 and `miku-md2pptx-java` Issue #9, both labeled
+  `bug`.
+
+### 2026-07-27: Standardize `--version` as a bare version number
+
+- Context: Eight bundled runtimes print only the version number, while the
+  `miku-docx2md` and `miku-pptx2md` Node/Java runtimes prefix it with the tool
+  name.
+- Decision: The canonical `--version` output for this converter family is one
+  bare version number such as `1.2.1`, without a tool or module name.
+- Reason: A stable value-only form is simple to compare and matches the
+  majority of the bundled runtime family.
+- Follow-up: Keep the existing Node Issues `miku-docx2md` #27 and
+  `miku-pptx2md` #10 and the registered Java Issues `miku-docx2md-java` #10
+  and `miku-pptx2md-java` #8, then update exact-version tests after corrected
+  releases are bundled.
