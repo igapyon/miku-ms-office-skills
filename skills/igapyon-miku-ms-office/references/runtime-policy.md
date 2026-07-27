@@ -50,18 +50,18 @@ Node.js CLI artifacts:
 - `miku-xlsx2md-1.3.0.mjs`
 - `miku-docx2md-1.2.1.mjs`
 - `miku-pptx2md-0.5.1.mjs`
-- `miku-md2xlsx-0.9.5.mjs`
-- `miku-md2docx-1.0.1.mjs`
-- `miku-md2pptx-0.6.0.mjs`
+- `miku-md2xlsx-0.10.0.mjs`
+- `miku-md2docx-1.1.0.mjs`
+- `miku-md2pptx-0.7.0.mjs`
 
 Java CLI artifacts:
 
 - `miku-xlsx2md-1.3.0.jar`
 - `miku-docx2md-1.2.1.jar`
 - `miku-pptx2md-0.5.1.jar`
-- `miku-md2xlsx-java-0.9.5.jar`
-- `miku-md2docx-java-1.0.1.jar`
-- `miku-md2pptx-java-0.6.0.jar`
+- `miku-md2xlsx-java-0.10.0.jar`
+- `miku-md2docx-java-1.1.0.jar`
+- `miku-md2pptx-java-0.7.0.jar`
 
 ## Backend Selection
 
@@ -96,6 +96,9 @@ Java CLI artifacts:
   flags unless the user explicitly asks for those artifacts.
 - Preserve stdout, stderr, exit code, and output artifact paths in the final
   report.
+- Treat a bare version number such as `1.2.1` as the canonical `--version`
+  output for this converter family. Do not require or infer a tool/module-name
+  prefix from that output.
 - Write scratch outputs under `workplace/` unless the user gives an explicit
   output path.
 - Do not overwrite input Office or Markdown files unless the user explicitly

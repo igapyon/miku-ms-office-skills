@@ -11967,7 +11967,9 @@ function getNodeZlib() {
   throw new Error("Node zlib is required for synchronous ZIP deflate operations. Use stored entries, readZipPackageAsync with DecompressionStream, or inject an async inflater.");
 }
 function createZip(entries) {
-  return writeZipPackage(entries);
+  return writeZipPackage(
+    entries.map((entry) => ({ ...entry, compression: "deflate" }))
+  );
 }
 function readZipEntries(data) {
   const result = readZipPackage(data);
@@ -12724,7 +12726,7 @@ function markdownToPptxResult(markdown, options = {}) {
 // package.json
 var package_default = {
   name: "miku-md2pptx",
-  version: "0.6.0",
+  version: "0.7.0",
   private: true,
   type: "module",
   scripts: {
@@ -12756,13 +12758,42 @@ var package_default = {
 };
 
 // scripts/lib/cli-support.mjs
+var CliUsageError = class extends Error {
+};
 function usage() {
+  const releaseAsset = `miku-md2pptx-${package_default.version}.mjs`;
   return `miku-md2pptx converts a Markdown file into a PowerPoint .pptx deck.
 
 Usage:
-  miku-md2pptx <input.md> --out <output.pptx> [--template <template.pptx>]
-  miku-md2pptx --help
-  miku-md2pptx --version
+  node ${releaseAsset} <input.md> --out <output.pptx> [options]
+  node ${releaseAsset} --help
+  node ${releaseAsset} --version
+
+Inputs:
+  <input.md>              UTF-8 Markdown source file.
+  --template <path>       Optional PowerPoint .pptx design source.
+
+Outputs:
+  stdout                  Human-readable success status, help, or version.
+  stderr                  Usage errors, conversion diagnostics, and failures.
+  <output.pptx>           Primary generated PowerPoint file.
+
+Generated artifacts:
+  A conversion writes only the .pptx path supplied with --out. Build outputs
+  such as dist/ and bundle/ are development artifacts, not conversion output.
+
+Overwrite behavior:
+  The output parent directory is created when needed. An existing output file
+  is replaced without prompting.
+
+Machine-readable output contract:
+  The generated .pptx file is the primary artifact. stdout is human-readable
+  status text and is not a stable machine-readable data format.
+
+Exit codes:
+  0  Conversion succeeded, or --help/--version was shown.
+  1  Input, output, template, or conversion processing failed.
+  2  CLI usage error, such as missing arguments or an unknown option.
 
 Options:
   --out <path>             Output .pptx path.
@@ -12776,12 +12807,9 @@ Options:
 Execution contract:
   Input, output, template, and local image paths are processed locally. Relative
   CLI paths are resolved from the current working directory.
-  The output parent directory is created when needed. An existing output file
-  is replaced without prompting.
   On success, the command exits 0 and prints "Wrote <path>" to stdout.
   Conversion diagnostics use "<severity>: <code>: <message>" on stderr. A
-  warning does not by itself make the command fail. Fatal errors use stderr and
-  a nonzero exit code.
+  warning does not by itself make the command fail.
 
 Template behavior:
   --template reads slide size, theme, slide masters, slide layouts, and related
@@ -12809,10 +12837,12 @@ Markdown handling notes:
   pixel-perfect PowerPoint layout.
 
 Examples:
-  npm run cli -- ./sample.md --out ./sample.pptx
-  npm run cli -- ./sample.md --out ./sample.pptx --template ./template.pptx
-  npm run cli -- ./sample.md --out ./sample.pptx --title "Project brief"
+  node ${releaseAsset} input.md --out output.pptx
+  node ${releaseAsset} input.md --out output.pptx --template template.pptx
 `;
+}
+function usageError(message) {
+  return new CliUsageError(message);
 }
 function parseArgs(args) {
   const options = { input: void 0, out: void 0, title: void 0, template: void 0 };
@@ -12826,38 +12856,38 @@ function parseArgs(args) {
     }
     if (arg === "--out") {
       options.out = args[++i];
-      if (!options.out) {
-        throw new Error("--out requires a path.");
+      if (!options.out || options.out.startsWith("-")) {
+        throw usageError("--out requires a path.");
       }
       continue;
     }
     if (arg === "--title") {
       options.title = args[++i];
-      if (!options.title) {
-        throw new Error("--title requires text.");
+      if (!options.title || options.title.startsWith("-")) {
+        throw usageError("--title requires text.");
       }
       continue;
     }
     if (arg === "--template") {
       options.template = args[++i];
-      if (!options.template) {
-        throw new Error("--template requires a .pptx path.");
+      if (!options.template || options.template.startsWith("-")) {
+        throw usageError("--template requires a .pptx path.");
       }
       continue;
     }
-    if (arg.startsWith("--")) {
-      throw new Error(`Unknown option: ${arg}`);
+    if (arg.startsWith("-")) {
+      throw usageError(`Unknown option: ${arg}`);
     }
     if (options.input) {
-      throw new Error(`Unexpected argument: ${arg}`);
+      throw usageError(`Unexpected argument: ${arg}`);
     }
     options.input = arg;
   }
   if (!options.input) {
-    throw new Error("Input Markdown path is required. Use --help for usage.");
+    throw usageError("Input Markdown path is required. Use --help for usage.");
   }
   if (!options.out) {
-    throw new Error("--out is required. Use --help for usage.");
+    throw usageError("--out is required. Use --help for usage.");
   }
   return options;
 }
@@ -12923,5 +12953,5 @@ try {
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}
 `);
-  process.exitCode = 1;
+  process.exitCode = error instanceof CliUsageError ? 2 : 1;
 }

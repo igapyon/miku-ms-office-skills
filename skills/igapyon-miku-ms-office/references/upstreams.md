@@ -5,7 +5,7 @@ converter family.
 
 Compatibility source status:
 
-- Checked on: 2026-07-18
+- Checked on: 2026-07-27
 - Source: GitHub Releases API, plus repository `devel` commit for repositories
   without a latest release
 - State: runtime artifacts are bundled for the listed release candidates
@@ -17,15 +17,15 @@ Compatibility source status:
 | `miku-xlsx2md` | release `v1.3.0`, published 2026-07-02 | `miku-xlsx2md-1.3.0.mjs` | bundled |
 | `miku-docx2md` | release `v1.2.1`, published 2026-07-02 | `miku-docx2md-1.2.1.mjs` | bundled |
 | `miku-pptx2md` | release `v0.5.1`, published 2026-07-02 | `miku-pptx2md-0.5.1.mjs` | bundled |
-| `miku-md2xlsx` | release `v0.9.5`, published 2026-07-18 | `miku-md2xlsx-0.9.5.mjs` | bundled |
-| `miku-md2docx` | release `v1.0.1`, published 2026-07-18 | `miku-md2docx-1.0.1.mjs` | bundled |
-| `miku-md2pptx` | release `v0.6.0`, published 2026-07-18 | `miku-md2pptx-0.6.0.mjs` | bundled |
+| `miku-md2xlsx` | release `v0.10.0`, published 2026-07-27 | `miku-md2xlsx-0.10.0.mjs` | bundled |
+| `miku-md2docx` | release `v1.1.0`, published 2026-07-27 | `miku-md2docx-1.1.0.mjs` | bundled |
+| `miku-md2pptx` | release `v0.7.0`, published 2026-07-27 | `miku-md2pptx-0.7.0.mjs` | bundled |
 | `miku-xlsx2md-java` | release `v1.3.0`, published 2026-07-02 | `miku-xlsx2md-1.3.0.jar` | bundled |
 | `miku-docx2md-java` | release `v1.2.1`, published 2026-07-02 | `miku-docx2md-1.2.1.jar` | bundled |
 | `miku-pptx2md-java` | release `v0.5.1`, published 2026-07-02 | `miku-pptx2md-0.5.1.jar` | bundled |
-| `miku-md2xlsx-java` | release `v0.9.5`, published 2026-07-18 | `miku-md2xlsx-java-0.9.5.jar` | bundled |
-| `miku-md2docx-java` | release `v1.0.1`, published 2026-07-18 | `miku-md2docx-java-1.0.1.jar` | bundled |
-| `miku-md2pptx-java` | release `v0.6.0`, published 2026-07-18 | `miku-md2pptx-java-0.6.0.jar` | bundled |
+| `miku-md2xlsx-java` | release `v0.10.0`, published 2026-07-27 | `miku-md2xlsx-java-0.10.0.jar` | bundled |
+| `miku-md2docx-java` | release `v1.1.0`, published 2026-07-27 | `miku-md2docx-java-1.1.0.jar` | bundled |
+| `miku-md2pptx-java` | release `v0.7.0`, published 2026-07-27 | `miku-md2pptx-java-0.7.0.jar` | bundled |
 
 ## Repository URLs
 
