@@ -4,12 +4,13 @@ Checked on 2026-07-27.
 
 ## Current State
 
-- Package version: `0.7.0`
+- Package version: `0.7.1`
 - Runtime maturity: bundled-runtime execution for documented artifacts, with
   handoff behavior for unsupported or missing runtime paths.
-- Release zip: `bundle/igapyon-miku-ms-office-skills-0.7.0.zip`
-- Release status: runtime sources and package version were refreshed on
-  2026-07-27, and the 0.7.0 release ZIP was regenerated. Desktop Word
+- Release zip: `bundle/igapyon-miku-ms-office-skills-0.7.1.zip`
+- Release status: runtime sources were refreshed on 2026-07-27. The package
+  patch version was advanced to 0.7.1 after documenting downstream update
+  notification, and the 0.7.1 release ZIP was regenerated. Desktop Word
   Compatibility Mode confirmation remains before final release handling.
 
 ## Initial Shape
@@ -90,6 +91,17 @@ improvements.
 Source artifacts are intentionally not bundled. The skill packages only CLI
 execution artifacts for the selected converter releases.
 
+## Downstream Update Notification
+
+After publishing a new `miku-ms-office-skills` GitHub Release, create or update
+an Issue in `igapyon-agent-skills` requesting an update of its externally
+bundled `skills/igapyon-miku-ms-office/`.
+
+Include the new release tag, Release URL, and any material compatibility notes.
+Do not send a downstream update request for unreleased commits. The downstream
+notification for `miku-ms-office-skills` 0.7.0 is tracked by
+[`igapyon-agent-skills` Issue #301](https://github.com/igapyon/igapyon-agent-skills/issues/301).
+
 ## Verification
 
 Checked on 2026-06-28:
@@ -141,3 +153,6 @@ Checked on 2026-07-27:
 - `python3 /Users/igapyon/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/igapyon-miku-ms-office`: passed.
 - Package version `0.7.0` was verified and
   `bundle/igapyon-miku-ms-office-skills-0.7.0.zip` was regenerated.
+- Package patch version `0.7.1` was verified after adding the downstream
+  notification rule. `npm run build` passed all 8 tests and regenerated
+  `bundle/igapyon-miku-ms-office-skills-0.7.1.zip`; `quick_validate.py` passed.

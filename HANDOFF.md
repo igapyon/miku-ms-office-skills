@@ -18,15 +18,16 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 ## Current State
 
 - `miku-ms-office-skills` has a runtime-aware Agent Skills package.
-- Current package version is `0.7.0`.
+- Current package version is `0.7.1`.
 - The installable skill is `skills/igapyon-miku-ms-office/`.
 - Runtime artifacts are bundled under `skills/igapyon-miku-ms-office/runtime/`.
 - Runtime artifacts were refreshed on 2026-07-27 for the latest checked
   Markdown-to-Office Node.js and Java converter releases recorded in
   `skills/igapyon-miku-ms-office/references/upstreams.md`.
-- Package version was updated to `0.7.0` for the coordinated 2026-07-27 runtime
-  refresh. The versioned release ZIP is
-  `bundle/igapyon-miku-ms-office-skills-0.7.0.zip`.
+- Package version was advanced to `0.7.1` after the coordinated 2026-07-27
+  runtime refresh and downstream notification documentation update. The
+  versioned release ZIP is
+  `bundle/igapyon-miku-ms-office-skills-0.7.1.zip`.
 - The project goal has been updated to completing a distributable runtime-aware
   Agent Skills package, not just the initial skeleton.
 - Candidate upstream release versions and artifact names were recorded in
@@ -98,3 +99,6 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 - 2026-07-27: `quick_validate.py` passed.
 - 2026-07-27: package version `0.7.0` selected; version-aligned build and ZIP
   verification completed.
+- 2026-07-27: package patch version `0.7.1` applied after documenting the
+  downstream update notification rule; `npm run build` passed all 8 tests,
+  regenerated the 0.7.1 ZIP, and `quick_validate.py` passed.
