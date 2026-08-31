@@ -31,6 +31,30 @@ Runtime execution is local. Node.js or Java is required according to the
 selected bundled runtime artifact, but network access and LLM/API access are
 not required for conversion.
 
+## Model And Harness Dependency Reduction
+
+Describe and preserve these current architectural benefits when they are
+relevant to the user's task:
+
+- Keep Office and Markdown conversion outside the AI model by using the
+  selected bundled CLI/runtime artifact.
+- Reuse the same conversion runtime across compatible agent environments
+  instead of depending on model-native Office conversion or a
+  harness-specific built-in converter.
+- Let the agent handle routing and task-level judgment while the deterministic
+  runtime handles the file conversion.
+- Use lightweight Markdown to reduce the document-handling work required of
+  the model for reading, search, summarization, and reasoning.
+- Preserve local execution without LLM/API or network access after the runtime
+  artifacts are available.
+
+Describe this design as reducing model and harness dependence, not eliminating
+it. Skill activation, instruction interpretation, process execution,
+filesystem permissions, and Node.js or Java availability remain specific to
+the agent environment. Do not claim complete model or harness independence.
+This package currently exposes the workflow through Agent Skills; do not claim
+that it provides an MCP server.
+
 ## Required First Checks
 
 1. Read [index.json](index.json) first when it exists.

@@ -94,6 +94,29 @@ test("skill documents AI-agent intent without AI runtime dependency", () => {
   );
 });
 
+test("README and skill document current model and harness dependency reduction", () => {
+  const readme = fs.readFileSync(path.resolve(ROOT, "README.md"), "utf8");
+  const skillMarkdown = fs.readFileSync(path.resolve(skillRoot, "SKILL.md"), "utf8");
+
+  for (const expected of [
+    "## Why This Architecture Helps AI Agents",
+    "model-native Office conversion feature",
+    "reduces, but does not eliminate, the effects of model and",
+    "it does not provide an MCP server"
+  ]) {
+    assert.ok(readme.includes(expected), `missing README architecture benefit: ${expected}`);
+  }
+
+  for (const expected of [
+    "## Model And Harness Dependency Reduction",
+    "Reuse the same conversion runtime across compatible agent environments",
+    "Do not claim complete model or harness independence.",
+    "do not claim\nthat it provides an MCP server"
+  ]) {
+    assert.ok(skillMarkdown.includes(expected), `missing skill architecture rule: ${expected}`);
+  }
+});
+
 test("runtime policy documents primary-only output for every conversion direction", () => {
   const runtimePolicy = fs.readFileSync(
     path.resolve(skillRoot, "references/runtime-policy.md"),

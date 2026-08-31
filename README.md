@@ -21,6 +21,34 @@ required to run conversions.
 It wraps existing CLI/runtime artifacts with routing, execution policy, and
 limitation guidance. It does not implement conversion logic itself.
 
+## Why This Architecture Helps AI Agents
+
+The package keeps Office and Markdown conversion outside the AI model. The
+Agent Skill supplies routing, execution policy, and limitation guidance, while
+the bundled miku-soft CLI/runtime artifact performs the file conversion.
+
+This separation provides several current benefits:
+
+- An agent does not need a model-native Office conversion feature. Compatible
+  agent environments that can follow the skill and execute the selected
+  runtime can reuse the same conversion path.
+- Reusing the same local, deterministic runtime keeps conversion behavior
+  separate from model responses and harness-specific built-in features. This
+  reduces variation when the model or compatible agent harness changes.
+- Converting Office content to lightweight Markdown gives the model a simpler
+  input for reading, search, summarization, and reasoning.
+- Conversion can run without sending document content to an LLM/API or
+  requiring a network connection after the runtime artifacts are available.
+- The Apache-2.0-licensed Agent Skills package makes its routing and execution
+  policy inspectable and reusable instead of embedding that behavior in a
+  model-specific feature.
+
+This architecture reduces, but does not eliminate, the effects of model and
+harness differences. Skill activation, instruction interpretation, process
+execution, filesystem permissions, and Node.js or Java availability still
+belong to the agent environment. This package currently provides the external
+workflow through Agent Skills; it does not provide an MCP server.
+
 The Office-to-Markdown converters are intended for quick text extraction.
 Images, shapes, charts, and other visual content are unsupported or only
 covered in very limited ways. Use them when getting the textual content quickly
