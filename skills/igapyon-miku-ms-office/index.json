@@ -4,7 +4,7 @@
  "generation": {"schemaVersion":1,"inputPath":".","markdownOutput":false,"recursive":true,"includeExtensions":["md","json","yaml","mjs","jar"],"inputEncoding":"utf8","outputEncoding":"utf8","title":"igapyon-miku-ms-office","includeGeneratorMetadata":true},
  "basePath": ".",
  "files": [
-  {"name":"SKILL.md","path":"SKILL.md","ext":"md","dir":"","size":4462,"description":"Use only when the user explicitly names `igapyon-miku-ms-office`, `miku-ms-office`, `miku-ms-office-skills`, or one of the supported miku Office conversion tools (`miku-xlsx2md`, `miku-docx2md`, `miku-pptx2md`, `miku-md2xlsx`, `miku-md2docx`, `miku-md2p...","summary":"igapyon-miku-ms-office"},
+  {"name":"SKILL.md","path":"SKILL.md","ext":"md","dir":"","size":5671,"description":"Use only when the user explicitly names `igapyon-miku-ms-office`, `miku-ms-office`, `miku-ms-office-skills`, or one of the supported miku Office conversion tools (`miku-xlsx2md`, `miku-docx2md`, `miku-pptx2md`, `miku-md2xlsx`, `miku-md2docx`, `miku-md2p...","summary":"igapyon-miku-ms-office"},
   {"name":"openai.yaml","path":"agents/openai.yaml","ext":"yaml","dir":"agents","size":104},
   {"name":"INDEX.md","path":"references/INDEX.md","ext":"md","dir":"references","size":694,"summary":"Reference Index"},
   {"name":"runtime-policy.md","path":"references/runtime-policy.md","ext":"md","dir":"references","size":6082,"summary":"Runtime Policy"},

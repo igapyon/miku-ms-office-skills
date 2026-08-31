@@ -34,9 +34,15 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
   `skills/igapyon-miku-ms-office/references/upstreams.md` on 2026-06-28.
 - Runtime artifacts have been downloaded under
   `skills/igapyon-miku-ms-office/runtime/`.
+- `README.md` and the canonical `SKILL.md` now document the current benefit of
+  separating Agent Skills routing from local deterministic conversion. The
+  wording describes reduced model and compatible-harness dependence without
+  claiming complete independence or current MCP support.
 
 ## Next Action
 
+- Review and commit the Issue #17 documentation, contract-test, generated
+  index, and state-file updates; close Issue #17 after the change is merged.
 - Confirm with desktop Word that generated DOCX files no longer open in
   Compatibility Mode.
 - After corrective releases for `miku-md2xlsx-java` Issue #9 and
@@ -68,8 +74,8 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 - Six upstream Markdown-to-Office `--help` improvement Issues opened on
   2026-07-18 are linked from `TODO.md`; the new releases include those
   CLI-contract improvements.
-- Current branch is `devel-tiga0718nfi`; the 2026-07-27 runtime refresh and
-  synchronized documentation/test changes are uncommitted.
+- Current branch is `devel-tiga0727xcf`; the Issue #17 documentation,
+  contract-test, generated-index, and state-file updates are uncommitted.
 - Representative local comparison produced valid Node and Java Office ZIP
   packages with identical entry sets. DOCX key XML matched exactly. XLSX
   worksheet blank-row/rich-text representation and PPTX default-style/XML
@@ -102,3 +108,6 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 - 2026-07-27: package patch version `0.7.1` applied after documenting the
   downstream update notification rule; `npm run build` passed all 8 tests,
   regenerated the 0.7.1 ZIP, and `quick_validate.py` passed.
+- 2026-08-31: Issue #17 documentation and contract coverage completed;
+  `npm test` passed all 9 tests, `npm run build` regenerated the 0.7.1 ZIP,
+  and `quick_validate.py` passed.

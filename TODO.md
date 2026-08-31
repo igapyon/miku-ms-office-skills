@@ -67,6 +67,13 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Tasks
 
+- [x] Document the current model and harness dependency-reduction benefits
+  tracked by
+  [miku-ms-office-skills #17](https://github.com/igapyon/miku-ms-office-skills/issues/17).
+  `README.md` now explains the user-facing value of separating Agent Skills
+  routing from local deterministic conversion, and the canonical `SKILL.md`
+  preserves the same boundary without claiming complete independence or
+  current MCP support.
 - [x] Refresh the bundled Markdown-to-Office runtimes to the latest releases
   checked on 2026-07-27:
   `miku-md2xlsx` / `miku-md2xlsx-java` `v0.10.0`,

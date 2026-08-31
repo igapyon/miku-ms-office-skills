@@ -27,6 +27,18 @@ family.
 `runtime-policy.md`, and `upstreams.md`. Conversion behavior remains owned by
 the upstream miku converter repositories.
 
+## 2026-08-31: Treat dependency reduction as a current product benefit
+
+Reason:
+The existing Agent Skills package already separates agent-side routing and
+judgment from local, deterministic Office/Markdown conversion performed by
+bundled CLI/runtime artifacts. This is current behavior, not a future feature.
+
+Impact:
+Describe the architecture as reducing model and compatible-harness dependence,
+not as guaranteeing complete independence. Agent Skills are the current
+integration boundary. Do not present MCP support as an existing capability.
+
 ## 2026-06-28: Initial runtime state was handoff-only
 
 理由:
