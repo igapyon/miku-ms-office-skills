@@ -40,7 +40,6 @@ test("release zip contains installable skill files and excludes development-only
   }).trim().split(/\n/).filter(Boolean);
 
   assertIncludes(entries, `skills/${skillName}/SKILL.md`);
-  assertIncludes(entries, `skills/${skillName}/index.json`);
   assertIncludes(entries, `skills/${skillName}/references/INDEX.md`);
   for (const runtimeFile of expectedRuntimeFiles) {
     assertIncludes(entries, `skills/${skillName}/runtime/${runtimeFile}`);

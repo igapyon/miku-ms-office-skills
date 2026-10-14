@@ -131,7 +131,7 @@ The initial scope covers these upstream families:
 ## Repository Notes
 
 - `skills/igapyon-miku-ms-office/` is the canonical skill source.
-- `skills/igapyon-miku-ms-office/index.json` is generated discovery metadata.
+- The installed skill uses direct reference links and scoped searches; it does not require a generated root inventory.
 - `skills/igapyon-miku-ms-office/runtime/` contains bundled Node.js `.mjs` and
   Java `.jar` runtime artifacts from the upstream converter releases.
 - `workplace/` is a local scratch area. Only `workplace/.gitkeep` is tracked.

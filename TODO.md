@@ -44,16 +44,16 @@ distributable Agent Skills package.
 ### 4. Update Tests and Bundle Verification
 
 - [x] Update isolated bundle smoke tests to check each bundled runtime category.
-- [x] Ensure release bundle tests require `SKILL.md`, `index.json`, references,
-  and expected runtime artifacts.
+- [x] Ensure release bundle tests require `SKILL.md`, references, and expected
+  runtime artifacts; `index.json` is optional discovery metadata.
 - [x] Run `npm test`.
 - [x] Run `npm run build`.
 - [x] Validate the skill with `quick_validate.py`.
 
-### 5. Regenerate Discovery and Documentation
+### 5. Document Discovery and Runtime
 
-- [x] Regenerate `skills/igapyon-miku-ms-office/index.json` with `miku-indexgen`
-  or the repository's documented equivalent.
+- [x] Keep generated skill-root inventory optional; skill discovery uses direct
+  reference links and scoped searches.
 - [x] Update `README.md` with final runtime artifact and quick-start details.
 - [x] Update `docs/development.md` with checked upstream versions and final
   verification results.

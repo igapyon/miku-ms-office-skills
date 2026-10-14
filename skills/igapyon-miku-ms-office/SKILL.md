@@ -57,7 +57,7 @@ that it provides an MCP server.
 
 ## Required First Checks
 
-1. Read [index.json](index.json) first when it exists.
+1. Use the task-specific links below to choose the relevant reference, then search within the linked subject area if needed.
 2. Read [references/tool-map.md](references/tool-map.md) to choose the upstream
    tool for the requested conversion.
 3. Read [references/runtime-policy.md](references/runtime-policy.md) before
