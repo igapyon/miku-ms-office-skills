@@ -135,16 +135,10 @@ test("runtime policy documents primary-only output for every conversion directio
   }
 });
 
-test("discovery index lists bundled runtime artifacts", () => {
-  const indexJson = JSON.parse(
-    fs.readFileSync(path.resolve(skillRoot, "index.json"), "utf8")
-  );
-  const indexedPaths = new Set(indexJson.files.map((file) => file.path));
-
-  for (const runtimeFile of fs.readdirSync(path.resolve(skillRoot, "runtime"))) {
-    assert.ok(
-      indexedPaths.has(`runtime/${runtimeFile}`),
-      `runtime artifact missing from index.json: ${runtimeFile}`
-    );
+test("runtime artifacts exist in the skill tree", () => {
+  const runtimeRoot = path.resolve(skillRoot, "runtime");
+  assert.ok(fs.readdirSync(runtimeRoot).length > 0, "runtime artifacts are required");
+  for (const runtimeFile of fs.readdirSync(runtimeRoot)) {
+    assert.ok(fs.statSync(path.resolve(runtimeRoot, runtimeFile)).isFile(), `missing runtime file: ${runtimeFile}`);
   }
 });

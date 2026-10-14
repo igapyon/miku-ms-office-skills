@@ -41,8 +41,8 @@ logic.
 - Runtime lookup, backend selection, failure behavior, and handoff behavior are
   documented and tested.
 - Smoke tests cover installable bundle shape and any bundled runtime artifacts.
-- `skills/igapyon-miku-ms-office/index.json` is regenerated from current skill
-  contents.
+- The installable skill routes through `SKILL.md` references and does not require
+  a generated root inventory.
 - `npm test`, `npm run build`, and skill validation pass.
 - README, TODO, DECISIONS, and HANDOFF describe the final state accurately.
 
