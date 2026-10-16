@@ -5,7 +5,8 @@ converter family.
 
 Compatibility source status:
 
-- Checked on: 2026-07-27
+- Checked on: 2026-10-16 for `miku-xlsx2md` and `miku-xlsx2md-java`; the
+  other release anchors were last checked on 2026-07-27.
 - Source: GitHub Releases API, plus repository `devel` commit for repositories
   without a latest release
 - State: runtime artifacts are bundled for the listed release candidates
@@ -14,13 +15,13 @@ Compatibility source status:
 
 | Tool | Bundled anchor | Bundled runtime artifacts | Status |
 | --- | --- | --- | --- |
-| `miku-xlsx2md` | release `v1.3.0`, published 2026-07-02 | `miku-xlsx2md-1.3.0.mjs` | bundled |
+| `miku-xlsx2md` | release `v1.3.1`, published 2026-10-16 | `miku-xlsx2md-1.3.1.mjs` | bundled |
 | `miku-docx2md` | release `v1.2.1`, published 2026-07-02 | `miku-docx2md-1.2.1.mjs` | bundled |
 | `miku-pptx2md` | release `v0.5.1`, published 2026-07-02 | `miku-pptx2md-0.5.1.mjs` | bundled |
 | `miku-md2xlsx` | release `v0.10.0`, published 2026-07-27 | `miku-md2xlsx-0.10.0.mjs` | bundled |
 | `miku-md2docx` | release `v1.1.0`, published 2026-07-27 | `miku-md2docx-1.1.0.mjs` | bundled |
 | `miku-md2pptx` | release `v0.7.0`, published 2026-07-27 | `miku-md2pptx-0.7.0.mjs` | bundled |
-| `miku-xlsx2md-java` | release `v1.3.0`, published 2026-07-02 | `miku-xlsx2md-1.3.0.jar` | bundled |
+| `miku-xlsx2md-java` | release `v1.3.1`, published 2026-10-16 | `miku-xlsx2md-1.3.1.jar` | bundled |
 | `miku-docx2md-java` | release `v1.2.1`, published 2026-07-02 | `miku-docx2md-1.2.1.jar` | bundled |
 | `miku-pptx2md-java` | release `v0.5.1`, published 2026-07-02 | `miku-pptx2md-0.5.1.jar` | bundled |
 | `miku-md2xlsx-java` | release `v0.10.0`, published 2026-07-27 | `miku-md2xlsx-java-0.10.0.jar` | bundled |

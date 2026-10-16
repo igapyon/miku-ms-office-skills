@@ -1,16 +1,17 @@
 # Development Notes
 
-Checked on 2026-07-27.
+Checked on 2026-10-16.
 
 ## Current State
 
-- Package version: `0.7.1`
+- Package version: `0.7.3`
 - Runtime maturity: bundled-runtime execution for documented artifacts, with
   handoff behavior for unsupported or missing runtime paths.
-- Release zip: `bundle/igapyon-miku-ms-office-skills-0.7.1.zip`
-- Release status: runtime sources were refreshed on 2026-07-27. The package
-  patch version was advanced to 0.7.1 after documenting downstream update
-  notification, and the 0.7.1 release ZIP was regenerated. Desktop Word
+- Release zip: `bundle/igapyon-miku-ms-office-skills-0.7.3.zip`
+- Release status: the `miku-xlsx2md` Node and Java runtime pair was refreshed
+  to `v1.3.1` on 2026-10-16, the package patch version was advanced to `0.7.2`
+  for that refresh and then incremented to `0.7.3`; the matching release ZIP
+  was regenerated. Desktop Word
   Compatibility Mode confirmation remains before final release handling.
 
 ## Initial Shape
@@ -88,6 +89,20 @@ The six `--help` improvement Issues opened on 2026-07-18 are linked from
 `TODO.md`; the 2026-07-27 releases include the corresponding CLI-contract
 improvements.
 
+On 2026-10-16, the Office-to-Markdown XLSX runtimes were refreshed together:
+
+- `miku-xlsx2md` Node.js: `v1.3.1`, SHA-256
+  `d0c52fc418e16c33a055c432d331764f21e619ef620bf6987561aaed942ebcf6`.
+- `miku-xlsx2md-java`: `v1.3.1`, SHA-256
+  `88124a497b2b5e0f36bd7f2c42a14a7e43d7e23c49e6a7618c40c7a64d54c4a5`.
+
+The Node release improves table detection for mismatched header/data widths and
+partially merged header rows. The Java release carries the same behavior; its
+upstream comparison reports matching output across six fixtures and three
+table-detection modes. Both artifacts report version `1.3.1`, and their shared
+single-file CLI options remain aligned. Java retains its directory-conversion
+options.
+
 Source artifacts are intentionally not bundled. The skill packages only CLI
 execution artifacts for the selected converter releases.
 
@@ -156,3 +171,18 @@ Checked on 2026-07-27:
 - Package patch version `0.7.1` was verified after adding the downstream
   notification rule. `npm run build` passed all 8 tests and regenerated
   `bundle/igapyon-miku-ms-office-skills-0.7.1.zip`; `quick_validate.py` passed.
+
+Checked on 2026-10-16:
+
+- Confirmed the latest Node and Java XLSX-to-Markdown releases are both
+  `v1.3.1` and compared the upstream tag changes.
+- Verified the downloaded `.mjs` and `.jar` SHA-256 values against GitHub
+  Release asset digests. Both `--version` commands returned `1.3.1`; shared
+  `--help` options matched, with Java-specific directory options preserved.
+- Compared both runtimes on six upstream table-header fixtures across all
+  three detection modes; all 18 Node/Java Markdown outputs matched byte for
+  byte.
+- `npm test`: passed all 9 tests.
+- `npm run build`: passed and regenerated
+  `bundle/igapyon-miku-ms-office-skills-0.7.2.zip`.
+- `python3 /Users/igapyon/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/igapyon-miku-ms-office`: passed.

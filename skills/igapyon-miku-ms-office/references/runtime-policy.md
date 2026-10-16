@@ -47,7 +47,7 @@ report the missing artifact and stay in handoff-only mode.
 
 Node.js CLI artifacts:
 
-- `miku-xlsx2md-1.3.0.mjs`
+- `miku-xlsx2md-1.3.1.mjs`
 - `miku-docx2md-1.2.1.mjs`
 - `miku-pptx2md-0.5.1.mjs`
 - `miku-md2xlsx-0.10.0.mjs`
@@ -56,7 +56,7 @@ Node.js CLI artifacts:
 
 Java CLI artifacts:
 
-- `miku-xlsx2md-1.3.0.jar`
+- `miku-xlsx2md-1.3.1.jar`
 - `miku-docx2md-1.2.1.jar`
 - `miku-pptx2md-0.5.1.jar`
 - `miku-md2xlsx-java-0.10.0.jar`

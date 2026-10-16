@@ -19,11 +19,11 @@ const expectedRuntimeFiles = [
   "miku-md2xlsx-java-0.10.0.jar",
   "miku-pptx2md-0.5.1.jar",
   "miku-pptx2md-0.5.1.mjs",
-  "miku-xlsx2md-1.3.0.jar",
-  "miku-xlsx2md-1.3.0.mjs"
+  "miku-xlsx2md-1.3.1.jar",
+  "miku-xlsx2md-1.3.1.mjs"
 ];
 const cliMjsFiles = new Set([
-  "miku-xlsx2md-1.3.0.mjs",
+  "miku-xlsx2md-1.3.1.mjs",
   "miku-docx2md-1.2.1.mjs",
   "miku-pptx2md-0.5.1.mjs",
   "miku-md2docx-1.1.0.mjs",

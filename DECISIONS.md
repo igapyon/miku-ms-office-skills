@@ -15,6 +15,15 @@ update_when:
 This file records important decisions for the AI agent.
 Read this before making or revisiting decisions, especially when the work seems to loop.
 
+## 2026-10-16: Refresh the XLSX-to-Markdown Node and Java runtimes together
+
+- Context: `miku-xlsx2md` and `miku-xlsx2md-java` published coordinated
+  `v1.3.1` releases with the same table-header detection changes.
+- Decision: Replace both bundled runtimes as one compatibility pair and
+  advance the package patch version to `0.7.2` for the refreshed bundle.
+- Reason: The Java release implements the Node `v1.3.1` behavior and reports
+  matching results across six fixtures and three table-detection modes.
+
 ## 2026-06-28: Aggregate skill over Office converter family
 
 理由:
