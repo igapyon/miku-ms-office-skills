@@ -5,7 +5,7 @@ and run the appropriate miku-soft CLI converter for Microsoft Office and
 Markdown workflows.
 
 The installable skill is `igapyon-miku-ms-office`. The current package version
-is `0.7.1`.
+is `0.7.3`.
 
 This repository is designed for generative AI and AI agent workflows. Its main
 purpose is to turn Word (`.docx`), Excel (`.xlsx`), and PowerPoint (`.pptx`)

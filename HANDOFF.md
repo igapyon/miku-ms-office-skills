@@ -18,16 +18,12 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 ## Current State
 
 - `miku-ms-office-skills` has a runtime-aware Agent Skills package.
-- Current package version is `0.7.1`.
+- Current package version is `0.7.2`.
 - The installable skill is `skills/igapyon-miku-ms-office/`.
 - Runtime artifacts are bundled under `skills/igapyon-miku-ms-office/runtime/`.
-- Runtime artifacts were refreshed on 2026-07-27 for the latest checked
-  Markdown-to-Office Node.js and Java converter releases recorded in
-  `skills/igapyon-miku-ms-office/references/upstreams.md`.
-- Package version was advanced to `0.7.1` after the coordinated 2026-07-27
-  runtime refresh and downstream notification documentation update. The
-  versioned release ZIP is
-  `bundle/igapyon-miku-ms-office-skills-0.7.1.zip`.
+- The `miku-xlsx2md` Node.js and Java runtimes were refreshed to `v1.3.1` on
+  2026-10-16. Package version `0.7.2` and its versioned release ZIP were
+  generated for this update.
 - The project goal has been updated to completing a distributable runtime-aware
   Agent Skills package, not just the initial skeleton.
 - Candidate upstream release versions and artifact names were recorded in
@@ -41,8 +37,7 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 
 ## Next Action
 
-- Review and commit the Issue #17 documentation, contract-test, generated
-  index, and state-file updates; close Issue #17 after the change is merged.
+- Review and commit the verified 2026-10-16 XLSX runtime refresh.
 - Confirm with desktop Word that generated DOCX files no longer open in
   Compatibility Mode.
 - After corrective releases for `miku-md2xlsx-java` Issue #9 and
@@ -74,8 +69,8 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 - Six upstream Markdown-to-Office `--help` improvement Issues opened on
   2026-07-18 are linked from `TODO.md`; the new releases include those
   CLI-contract improvements.
-- Current branch is `devel-tiga0727xcf`; the Issue #17 documentation,
-  contract-test, generated-index, and state-file updates are uncommitted.
+- Current branch is `devel-tiga1014jcc`; the 2026-10-16 XLSX runtime refresh
+  is uncommitted.
 - Representative local comparison produced valid Node and Java Office ZIP
   packages with identical entry sets. DOCX key XML matched exactly. XLSX
   worksheet blank-row/rich-text representation and PPTX default-style/XML
@@ -111,3 +106,8 @@ Keep it concise. Do not use this as a full work log or a replacement for `TODO.m
 - 2026-08-31: Issue #17 documentation and contract coverage completed;
   `npm test` passed all 9 tests, `npm run build` regenerated the 0.7.1 ZIP,
   and `quick_validate.py` passed.
+- 2026-10-16: XLSX Node/Java `v1.3.1` Release asset checksums, versions, and
+  shared CLI help options were checked. Six upstream fixtures across three
+  detection modes matched byte-for-byte between Node and Java. `npm test`
+  passed all 9 tests, `npm run build` regenerated the 0.7.2 ZIP, and
+  `quick_validate.py` passed.

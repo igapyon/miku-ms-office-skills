@@ -67,6 +67,14 @@ Update this section while working. Do not rewrite unrelated TODO items.
 
 ### Tasks
 
+- [x] Refresh the bundled Office-to-Markdown XLSX runtimes to the coordinated
+  `miku-xlsx2md` / `miku-xlsx2md-java` `v1.3.1` releases published on
+  2026-10-16. This release pair improves detection for uneven and partially
+  merged table headers. Both checksums and `--version` outputs matched. The
+  Node/Java outputs matched byte-for-byte on six upstream fixtures across all
+  three detection modes. Runtime references, fixed-filename tests, package
+  version `0.7.2`, and work records were synchronized; `npm test`,
+  `npm run build`, and skill validation passed.
 - [x] Document the current model and harness dependency-reduction benefits
   tracked by
   [miku-ms-office-skills #17](https://github.com/igapyon/miku-ms-office-skills/issues/17).

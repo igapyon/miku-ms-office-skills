@@ -22,8 +22,8 @@ const expectedRuntimeFiles = [
   "miku-md2xlsx-java-0.10.0.jar",
   "miku-pptx2md-0.5.1.jar",
   "miku-pptx2md-0.5.1.mjs",
-  "miku-xlsx2md-1.3.0.jar",
-  "miku-xlsx2md-1.3.0.mjs"
+  "miku-xlsx2md-1.3.1.jar",
+  "miku-xlsx2md-1.3.1.mjs"
 ];
 
 test("release zip contains installable skill files and excludes development-only files", () => {
